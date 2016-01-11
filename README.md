@@ -31,7 +31,7 @@ Syslog NG provides the capability to use a named pipe as a destination. Use
 this app to read log messages from the FIFO and publish them to a Kenisis
 stream.
 
-Ubuntu 14.04, create a file named `/etc/syslog-ng/conf.d/01-kinesis.conf`
+On Ubuntu 14.04, create a file named `/etc/syslog-ng/conf.d/01-kinesis.conf`
 with the following configration:
 
 ```
