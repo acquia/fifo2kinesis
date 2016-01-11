@@ -22,11 +22,11 @@ func init() {
 	viper.SetConfigName("fifo2kinesis")
 	viper.AddConfigPath("$HOME/.config")
 
-	conf.SetDefault("stream-name", "")
-	conf.BindEnv("stream-name", "FIFO2KINESIS_STREAM_NAME")
-
 	conf.SetDefault("fifo-name", "")
 	conf.BindEnv("fifo-name", "FIFO2KINESIS_FIFO_NAME")
+
+	conf.SetDefault("stream-name", "")
+	conf.BindEnv("stream-name", "FIFO2KINESIS_STREAM_NAME")
 }
 
 func main() {
@@ -98,5 +98,10 @@ func (fifo *Fifo) PutRecord(data []byte) {
 		StreamName:   fifo.stream,
 	}
 
-	_, _ = fifo.kinesis.PutRecord(params)
+	_, err := fifo.kinesis.PutRecord(params)
+
+	// @todo tolerate these errors, this is for initial development.
+	if err != nil {
+		log.Fatal(err)
+	}
 }
