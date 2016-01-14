@@ -29,7 +29,7 @@ The line will be published to the `mystream` Kinesis stream.
 
 Configuration is read from command line options and environment variables
 in that order of precedence. The following options and env variables are
-abailable:
+available:
 
 * `--fifo-name`, `FIFO2KINESIS_FIFO_NAME`: The absolute path of the named pipe.
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
