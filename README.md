@@ -25,13 +25,32 @@ echo "Streamed at $(date)" > test.pipe
 
 The line will be published to the `mystream` Kinesis stream.
 
-### Enviornment Variables
+### Configuration
 
-The following environment variables are supported:
+Configuration is read from command line options and environment variables
+in that order of precedence. The following options and env variables are
+abailable:
 
-* `FIFO2KINESIS_FIFO_NAME`
-* `FIFO2KINESIS_STREAM_NAME`
-* `FIFO2KINESIS_DEBUG`
+* `--fifo-name`, `FIFO2KINESIS_FIFO_NAME`: The absolute path of the named pipe.
+* `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
+* `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
+
+### Upstart
+
+The application exits immediately with a non-zero exit code on all AWS
+errors. Therefore it is useful to run the app with an event system such as
+Upstart in order to respawn the service when an error occurs.
+
+```
+description "FIFO to Kinesis Pipeline"
+start on runlevel [23456]
+
+respawn
+respawn limit 3 30
+post-stop exec sleep 5
+
+exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
+```
 
 ### Integrating With Syslog NG
 
