@@ -23,7 +23,7 @@ var conf *viper.Viper
 // line options, environment variables, and the configuration file.
 var logger *Logger
 
-// init initializes the configuration.
+// init initializes the configuration and logging.
 func init() {
 
 	conf = viper.New()
@@ -34,7 +34,7 @@ func init() {
 
 	viper.SetConfigName("fifo2kinesis")
 
-	pflag.String("fifo-name", "", "The absolute path of the named pipe, e.g. /var/test.pipe")
+	pflag.String("fifo-name", "f", "The absolute path of the named pipe, e.g. /var/test.pipe")
 	conf.BindPFlag("fifo-name", pflag.Lookup("fifo-name"))
 	conf.SetDefault("fifo-name", "")
 
@@ -42,10 +42,19 @@ func init() {
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
 
+	pflag.BoolP("debug", "d", false, "Show debug level log messages")
+	conf.BindPFlag("debug", pflag.Lookup("debug"))
+	conf.SetDefault("debug", "")
+
 	pflag.Parse()
 
-	logger = NewLogger(LOG_DEBUG)
-	logger.Debug("initialized configuration")
+	if conf.GetBool("debug") {
+		logger = NewLogger(LOG_DEBUG)
+	} else {
+		logger = NewLogger(LOG_INFO)
+	}
+
+	logger.Debug("configuration parsed")
 }
 
 func main() {
@@ -64,6 +73,7 @@ func main() {
 	logger.Notice("pipeline stopped")
 }
 
+// StartPipeline sets up the event handler and starts the pipeline.
 func StartPipeline(fifo *Fifo) {
 	logger.Notice("starting pipeline")
 
@@ -74,6 +84,7 @@ func StartPipeline(fifo *Fifo) {
 	fifo.RunPipeline(wg, stop)
 }
 
+// EventListener listens for signals in order to stop the application.
 func EventListener(wg *sync.WaitGroup, stop chan bool) {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -104,9 +115,9 @@ func NewFifo(fifoName, streamName string) *Fifo {
 	}
 }
 
-// RunPipeline read sdata from the named pipe and publishes data records to
-// Kinesis. It opens "fifo-name" and publishes records to the "stream-name"
-// Kinesis stream.
+// RunPipeline continuously reads data from the named pipe and publishes
+// data records to Kinesis. It opens "fifo-name" and publishes records to
+// the "stream-name" Kinesis stream.
 func (fifo *Fifo) RunPipeline(wg *sync.WaitGroup, stop chan bool) error {
 	for {
 		select {
@@ -129,7 +140,7 @@ func (fifo *Fifo) RunPipeline(wg *sync.WaitGroup, stop chan bool) error {
 
 			for scanner.Scan() {
 				data := scanner.Bytes()
-				logger.Debug("read line from fifo: %s", data)
+				logger.Debug("line read from fifo: %s", data)
 				fifo.PublishDataRecord(data)
 			}
 		}
@@ -146,7 +157,7 @@ func (fifo *Fifo) PublishDataRecord(data []byte) {
 	}
 
 	if output, err := fifo.kinesis.PutRecord(params); err == nil {
-		logger.Debug("published data record with sequence number: %s", *output.SequenceNumber)
+		logger.Debug("data record published with sequence number: %s", *output.SequenceNumber)
 	} else {
 		logger.Error("error publishing data record: %s", err)
 	}
