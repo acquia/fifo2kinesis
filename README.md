@@ -35,7 +35,7 @@ abailable:
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
-### Upstart
+### Integrating With Upstart
 
 The application exits immediately with a non-zero exit code on all AWS
 errors. Therefore it is useful to run the app with an event system such as
