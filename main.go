@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -33,8 +34,15 @@ func init() {
 
 	viper.SetConfigName("fifo2kinesis")
 
+	pflag.String("fifo-name", "", "The absolute path of the named pipe, e.g. /var/test.pipe")
+	conf.BindPFlag("fifo-name", pflag.Lookup("fifo-name"))
 	conf.SetDefault("fifo-name", "")
+
+	pflag.StringP("stream-name", "s", "", "The name of the Kinesis stream")
+	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
+
+	pflag.Parse()
 
 	logger = NewLogger(LOG_DEBUG)
 	logger.Debug("initialized configuration")
@@ -49,7 +57,7 @@ func main() {
 
 	sn := conf.GetString("stream-name")
 	if sn == "" {
-		logger.Fatal("missing required option: stack-name")
+		logger.Fatal("missing required option: stream-name")
 	}
 
 	StartPipeline(NewFifo(fn, sn))

@@ -14,7 +14,7 @@ mkfifo ./test.pipe
 Run the app:
 
 ```shel
-FIFO2KINESIS_FIFO_NAME=$(pwd)/test.pipe FIFO2KINESIS_STREAM_NAME=mystream fifo2kinesis
+fifo2kinesis --fifo-name=$(pwd)/test.pipe --stream-name=mystream
 ```
 
 Write to the FIFO:
@@ -24,6 +24,13 @@ echo "Streamed at $(date)" > test.pipe
 ```
 
 The line will be published to the `mystream` Kinesis stream.
+
+### Enviornment Variables
+
+The following environment variables are supported:
+
+* `FIFO2KINESIS_FIFO_NAME`
+* `FIFO2KINESIS_STREAM_NAME`
 
 ### Integrating With Syslog NG
 
@@ -48,7 +55,7 @@ mkfifo /var/syslog.pipe
 Start the app:
 
 ```
-FIFO2KINESIS_FIFO_NAME=/var/syslog.pipe FIFO2KINESIS_STREAM_NAME=mystream fifo2kinesis
+fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=mystream
 ```
 
 Restart syslog-ng:
