@@ -35,7 +35,7 @@ abailable:
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
-### Integrating With Upstart
+### Running With Upstart
 
 The application exits immediately with a non-zero exit code on all AWS
 errors. Therefore it is useful to run the app with an event system such as
@@ -52,7 +52,7 @@ post-stop exec sleep 5
 exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
 ```
 
-### Integrating With Syslog NG
+### Publishing Logs With Syslog NG
 
 Syslog NG provides the capability to use a named pipe as a destination. Use
 this app to read log messages from the FIFO and publish them to a Kenisis
