@@ -56,7 +56,7 @@ post-stop exec sleep 5
 exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
 ```
 
-### Publishing Logs With Syslog NG
+### Publishing Logs From Syslog NG
 
 Syslog NG provides the capability to use a named pipe as a destination. Use
 this app to read log messages from the FIFO and publish them to a Kenisis
