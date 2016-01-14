@@ -31,6 +31,7 @@ The following environment variables are supported:
 
 * `FIFO2KINESIS_FIFO_NAME`
 * `FIFO2KINESIS_STREAM_NAME`
+* `FIFO2KINESIS_DEBUG`
 
 ### Integrating With Syslog NG
 
@@ -61,7 +62,7 @@ fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=mystream
 Restart syslog-ng:
 
 ```
-service restart syslog-ng
+service syslog-ng restart
 ```
 
 All log messages will be published to Kinesis.
