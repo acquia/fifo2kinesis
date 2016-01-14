@@ -47,7 +47,7 @@ Upstart in order to respawn the service when an error occurs.
 
 ```
 description "FIFO to Kinesis Pipeline"
-start on runlevel [23456]
+start on runlevel [2345]
 
 respawn
 respawn limit 3 30
