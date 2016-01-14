@@ -35,6 +35,10 @@ available:
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
+The application also requires credentials to publish to the specified
+Kinesis stream. It uses the same [configuration mechanism](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#config-settings-and-precedence)
+as the AWS CLI tool, minus the command line options.
+
 ### Running With Upstart
 
 The application exits immediately with a non-zero exit code on all AWS
