@@ -2,8 +2,11 @@ package main
 
 import (
 	"bufio"
-	"log"
 	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,37 +18,65 @@ import (
 // line options, environment variables, and the configuration file.
 var conf *viper.Viper
 
+// logger represents the configuration passed to the application via command
+// line options, environment variables, and the configuration file.
+var logger *Logger
+
 // init initializes the configuration.
 func init() {
+
 	conf = viper.New()
 
+	conf.SetEnvPrefix("FIFO2KINESIS")
+	conf.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	conf.AutomaticEnv()
+
 	viper.SetConfigName("fifo2kinesis")
-	viper.AddConfigPath("$HOME/.config")
 
 	conf.SetDefault("fifo-name", "")
-	conf.BindEnv("fifo-name", "FIFO2KINESIS_FIFO_NAME")
-
 	conf.SetDefault("stream-name", "")
-	conf.BindEnv("stream-name", "FIFO2KINESIS_STREAM_NAME")
+
+	logger = NewLogger(LOG_DEBUG)
+	logger.Debug("initialized configuration")
 }
 
 func main() {
 
 	fn := conf.GetString("fifo-name")
 	if fn == "" {
-		log.Fatal("missing required option: fifo-name")
+		logger.Fatal("missing required option: fifo-name")
 	}
 
 	sn := conf.GetString("stream-name")
 	if sn == "" {
-		log.Fatal("missing required option: stack-name")
+		logger.Fatal("missing required option: stack-name")
 	}
 
-	fifo := NewFifo(fn, sn)
+	StartPipeline(NewFifo(fn, sn))
+	logger.Notice("pipeline stopped")
+}
 
-	err := fifo.StartPipeline()
-	if err != nil {
-		log.Fatal(err)
+func StartPipeline(fifo *Fifo) {
+	logger.Notice("starting pipeline")
+
+	wg := &sync.WaitGroup{}
+	stop := make(chan bool)
+
+	go EventListener(wg, stop)
+	fifo.RunPipeline(wg, stop)
+}
+
+func EventListener(wg *sync.WaitGroup, stop chan bool) {
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	for {
+		select {
+		case <-quit:
+			logger.Notice("stopping pipeline")
+			stop <- true
+			break
+		}
 	}
 }
 
@@ -65,32 +96,40 @@ func NewFifo(fifoName, streamName string) *Fifo {
 	}
 }
 
-// StartPipeline continuously read data from the named pipe and sends
-// records to Kinesis. It opens "fifo-name" and publishes records to the
-// "stream-name" Kinesis stream.
-func (fifo *Fifo) StartPipeline() error {
+// RunPipeline read sdata from the named pipe and publishes data records to
+// Kinesis. It opens "fifo-name" and publishes records to the "stream-name"
+// Kinesis stream.
+func (fifo *Fifo) RunPipeline(wg *sync.WaitGroup, stop chan bool) error {
 	for {
+		select {
+		case <-stop:
+			wg.Wait()
+			logger.Notice("stopping pipeline")
+			return nil
 
-		file, err := os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
-		if err != nil {
-			return err
-		}
+		default:
+			logger.Debug("reading data from fifo: %s", fifo.name)
+			file, err := os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
+			if err != nil {
+				return err
+			}
 
-		defer file.Close()
+			defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanLines)
+			scanner := bufio.NewScanner(file)
+			scanner.Split(bufio.ScanLines)
 
-		// @todo batch processing and error handling.
-		for scanner.Scan() {
-			data := scanner.Bytes()
-			fifo.PutRecord(data)
+			for scanner.Scan() {
+				data := scanner.Bytes()
+				logger.Debug("read line from fifo: %s", data)
+				fifo.PublishDataRecord(data)
+			}
 		}
 	}
 }
 
-// Publishes records to the Kinesis stream.
-func (fifo *Fifo) PutRecord(data []byte) {
+// Publishes individual data records to the Kinesis stream.
+func (fifo *Fifo) PublishDataRecord(data []byte) {
 
 	params := &kinesis.PutRecordInput{
 		Data:         data,
@@ -98,10 +137,9 @@ func (fifo *Fifo) PutRecord(data []byte) {
 		StreamName:   fifo.stream,
 	}
 
-	_, err := fifo.kinesis.PutRecord(params)
-
-	// @todo tolerate these errors, this is for initial development.
-	if err != nil {
-		log.Fatal(err)
+	if output, err := fifo.kinesis.PutRecord(params); err == nil {
+		logger.Debug("published data record with sequence number: %s", *output.SequenceNumber)
+	} else {
+		logger.Error("error publishing data record: %s", err)
 	}
 }
