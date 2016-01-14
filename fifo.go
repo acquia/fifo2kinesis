@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -44,14 +45,16 @@ func (fifo *Fifo) RunPipeline() error {
 	for scanner.Scan() {
 		data := scanner.Bytes()
 		logger.Debug("line read from fifo: %s", data)
-		fifo.PublishDataRecord(data)
+		if err := fifo.PublishDataRecord(data); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // Publishes individual data records to the Kinesis stream.
-func (fifo *Fifo) PublishDataRecord(data []byte) {
+func (fifo *Fifo) PublishDataRecord(data []byte) error {
 
 	params := &kinesis.PutRecordInput{
 		Data:         data,
@@ -62,6 +65,8 @@ func (fifo *Fifo) PublishDataRecord(data []byte) {
 	if output, err := fifo.kinesis.PutRecord(params); err == nil {
 		logger.Debug("data record published with sequence number: %s", *output.SequenceNumber)
 	} else {
-		logger.Error("error publishing data record: %s", err)
+		return fmt.Errorf("error publishing data record: %s", err)
 	}
+
+	return nil
 }

@@ -66,7 +66,6 @@ func main() {
 	}
 
 	StartPipeline(NewFifo(fn, sn))
-
 }
 
 // StartPipeline sets up the event handler continuously runs the pipeline,
@@ -87,7 +86,9 @@ func StartPipeline(fifo *Fifo) {
 			return
 
 		default:
-			fifo.RunPipeline()
+			if err := fifo.RunPipeline(); err != nil {
+				logger.Fatal(err)
+			}
 		}
 	}
 }
