@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	LOG_EMERG  int = 0
-	LOG_ALERT  int = 1
 	LOG_CRIT   int = 2
 	LOG_ERROR  int = 3
 	LOG_WARN   int = 4
@@ -19,8 +17,6 @@ const (
 )
 
 type Logger struct {
-	EmergLogger  *log.Logger
-	AlertLogger  *log.Logger
 	CritLogger   *log.Logger
 	ErrorLogger  *log.Logger
 	WarnLogger   *log.Logger
@@ -41,23 +37,13 @@ func NewLogger(level int) *Logger {
 	}
 
 	return &Logger{
-		EmergLogger:  log.New(handler[0], "EMERG\t", log.Ldate|log.Ltime),
-		AlertLogger:  log.New(handler[1], "ALERT\t", log.Ldate|log.Ltime),
-		CritLogger:   log.New(handler[2], "CRIT\t", log.Ldate|log.Ltime),
-		ErrorLogger:  log.New(handler[3], "ERROR\t", log.Ldate|log.Ltime),
-		WarnLogger:   log.New(handler[4], "WARN\t", log.Ldate|log.Ltime),
-		NoticeLogger: log.New(handler[5], "NOTICE\t", log.Ldate|log.Ltime),
-		InfoLogger:   log.New(handler[6], "INFO\t", log.Ldate|log.Ltime),
-		DebugLogger:  log.New(handler[7], "DEBUG\t", log.Ldate|log.Ltime),
+		CritLogger:   log.New(handler[2], "CRIT\t", log.Ldate|log.Ltime|log.LUTC),
+		ErrorLogger:  log.New(handler[3], "ERROR\t", log.Ldate|log.Ltime|log.LUTC),
+		WarnLogger:   log.New(handler[4], "WARN\t", log.Ldate|log.Ltime|log.LUTC),
+		NoticeLogger: log.New(handler[5], "NOTICE\t", log.Ldate|log.Ltime|log.LUTC),
+		InfoLogger:   log.New(handler[6], "INFO\t", log.Ldate|log.Ltime|log.LUTC),
+		DebugLogger:  log.New(handler[7], "DEBUG\t", log.Ldate|log.Ltime|log.LUTC),
 	}
-}
-
-func (l *Logger) Emerg(format string, v ...interface{}) {
-	l.EmergLogger.Printf(format, v...)
-}
-
-func (l *Logger) Alert(format string, v ...interface{}) {
-	l.AlertLogger.Printf(format, v...)
 }
 
 func (l *Logger) Crit(format string, v ...interface{}) {
@@ -85,17 +71,17 @@ func (l *Logger) Debug(format string, v ...interface{}) {
 }
 
 func (l *Logger) Fatal(v ...interface{}) {
-	l.EmergLogger.Fatal(v...)
+	l.CritLogger.Fatal(v...)
 }
 
 func (l *Logger) Fatalf(format string, v ...interface{}) {
-	l.EmergLogger.Fatalf(format, v...)
+	l.CritLogger.Fatalf(format, v...)
 }
 
 func (l *Logger) Panic(v ...interface{}) {
-	l.EmergLogger.Panic(v...)
+	l.CritLogger.Panic(v...)
 }
 
 func (l *Logger) Panicf(format string, v ...interface{}) {
-	l.EmergLogger.Panicf(format, v...)
+	l.CritLogger.Panicf(format, v...)
 }
