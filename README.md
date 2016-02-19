@@ -3,6 +3,8 @@
 This app continuously reads data from a named pipe (FIFO) and publishes it
 to a Kinesis stream.
 
+*Disclaimer* [fluentd](http://www.fluentd.org/) is probably a better option for sending logs to kinesis.
+
 ## Usage
 
 Create a named pipe:
