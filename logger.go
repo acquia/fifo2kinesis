@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	LOG_CRIT   int = 2
-	LOG_ERROR  int = 3
-	LOG_WARN   int = 4
-	LOG_NOTICE int = 5
-	LOG_INFO   int = 6
-	LOG_DEBUG  int = 7
+	LOG_NONE = iota
+	LOG_CRIT
+	LOG_ERROR
+	LOG_WARN
+	LOG_NOTICE
+	LOG_INFO
+	LOG_DEBUG
 )
 
 type Logger struct {
@@ -37,12 +38,12 @@ func NewLogger(level int) *Logger {
 	}
 
 	return &Logger{
-		CritLogger:   log.New(handler[2], "CRIT\t", log.Ldate|log.Ltime|log.LUTC),
-		ErrorLogger:  log.New(handler[3], "ERROR\t", log.Ldate|log.Ltime|log.LUTC),
-		WarnLogger:   log.New(handler[4], "WARN\t", log.Ldate|log.Ltime|log.LUTC),
-		NoticeLogger: log.New(handler[5], "NOTICE\t", log.Ldate|log.Ltime|log.LUTC),
-		InfoLogger:   log.New(handler[6], "INFO\t", log.Ldate|log.Ltime|log.LUTC),
-		DebugLogger:  log.New(handler[7], "DEBUG\t", log.Ldate|log.Ltime|log.LUTC),
+		CritLogger:   log.New(handler[LOG_CRIT], "CRIT\t", log.Ldate|log.Ltime|log.LUTC),
+		ErrorLogger:  log.New(handler[LOG_ERROR], "ERROR\t", log.Ldate|log.Ltime|log.LUTC),
+		WarnLogger:   log.New(handler[LOG_WARN], "WARN\t", log.Ldate|log.Ltime|log.LUTC),
+		NoticeLogger: log.New(handler[LOG_NOTICE], "NOTICE\t", log.Ldate|log.Ltime|log.LUTC),
+		InfoLogger:   log.New(handler[LOG_INFO], "INFO\t", log.Ldate|log.Ltime|log.LUTC),
+		DebugLogger:  log.New(handler[LOG_DEBUG], "DEBUG\t", log.Ldate|log.Ltime|log.LUTC),
 	}
 }
 

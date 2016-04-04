@@ -30,17 +30,21 @@ func init() {
 
 	viper.SetConfigName("fifo2kinesis")
 
-	pflag.String("fifo-name", "f", "The absolute path of the named pipe, e.g. /var/test.pipe")
+	pflag.BoolP("debug", "d", false, "Show debug level log messages")
+	conf.BindPFlag("debug", pflag.Lookup("debug"))
+	conf.SetDefault("debug", "")
+
+	pflag.StringP("fifo-name", "f", "", "The absolute path of the named pipe, e.g. /var/test.pipe")
 	conf.BindPFlag("fifo-name", pflag.Lookup("fifo-name"))
 	conf.SetDefault("fifo-name", "")
+
+	pflag.StringP("partition-key", "p", "", "The partition key, defaults to a 12 character random string if omitted")
+	conf.BindPFlag("partition-key", pflag.Lookup("partition-key"))
+	conf.SetDefault("partition-key", "")
 
 	pflag.StringP("stream-name", "s", "", "The name of the Kinesis stream")
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
-
-	pflag.BoolP("debug", "d", false, "Show debug level log messages")
-	conf.BindPFlag("debug", pflag.Lookup("debug"))
-	conf.SetDefault("debug", "")
 
 	pflag.Parse()
 
@@ -65,7 +69,8 @@ func main() {
 		logger.Fatal("missing required option: stream-name")
 	}
 
-	StartPipeline(NewFifo(fn, sn))
+	pk := conf.GetString("partition-key")
+	StartPipeline(NewFifo(fn, sn, pk))
 }
 
 // StartPipeline sets up the event handler continuously runs the pipeline,

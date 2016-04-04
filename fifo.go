@@ -12,17 +12,19 @@ import (
 
 // Fifo represents the named pipe.
 type Fifo struct {
-	kinesis *kinesis.Kinesis
-	name    string
-	stream  *string
+	kinesis      *kinesis.Kinesis
+	name         string
+	stream       *string
+	partitionKey string
 }
 
 // NewFifo creates a new instance of the Fifo struct.
-func NewFifo(fifoName, streamName string) *Fifo {
+func NewFifo(fifoName, streamName, partitionKey string) *Fifo {
 	return &Fifo{
-		kinesis: kinesis.New(session.New()),
-		name:    fifoName,
-		stream:  aws.String(streamName),
+		kinesis:      kinesis.New(session.New()),
+		name:         fifoName,
+		stream:       aws.String(streamName),
+		partitionKey: partitionKey,
 	}
 }
 
@@ -53,13 +55,19 @@ func (fifo *Fifo) RunPipeline() error {
 	return nil
 }
 
-// Publishes individual data records to the Kinesis stream.
+// PublishDataRecord publishes individual data records to a Kinesis stream.
 func (fifo *Fifo) PublishDataRecord(data []byte) error {
 
 	params := &kinesis.PutRecordInput{
-		Data:         data,
-		PartitionKey: aws.String("PartitionKey"), // @todo change this
-		StreamName:   fifo.stream,
+		Data:       data,
+		StreamName: fifo.stream,
+	}
+
+	// Default to a 12 character random key if no partition key is set.
+	if fifo.partitionKey == "" {
+		params.PartitionKey = aws.String(RandomString(12))
+	} else {
+		params.PartitionKey = aws.String(fifo.partitionKey)
 	}
 
 	if output, err := fifo.kinesis.PutRecord(params); err == nil {
