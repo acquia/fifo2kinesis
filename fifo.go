@@ -71,7 +71,7 @@ func (fifo *Fifo) PublishDataRecord(data []byte) error {
 	}
 
 	if output, err := fifo.kinesis.PutRecord(params); err == nil {
-		logger.Debug("data record published with sequence number: %s", *output.SequenceNumber)
+		logger.Debug("data record published: sequence-number=%s partition-key=%s", *output.SequenceNumber, *params.PartitionKey)
 	} else {
 		return fmt.Errorf("error publishing data record: %s", err)
 	}
