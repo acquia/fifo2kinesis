@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/spf13/pflag"
@@ -78,28 +77,21 @@ func main() {
 func StartPipeline(fifo *Fifo) {
 	logger.Notice("starting pipeline")
 
-	wg := &sync.WaitGroup{}
 	stop := make(chan bool)
+	go EventListener(stop)
 
-	go EventListener(wg, stop)
-
-	for {
-		select {
-		case <-stop:
-			wg.Wait()
-			logger.Notice("pipeline stopped")
-			return
-
-		default:
-			if err := fifo.RunPipeline(); err != nil {
-				logger.Fatal(err)
-			}
+	go func() {
+		if err := fifo.RunPipeline(); err != nil {
+			logger.Fatal(err)
 		}
-	}
+	}()
+
+	<-stop
+	logger.Notice("pipeline stopped")
 }
 
 // EventListener listens for signals in order to stop the application.
-func EventListener(wg *sync.WaitGroup, stop chan bool) {
+func EventListener(stop chan bool) {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
