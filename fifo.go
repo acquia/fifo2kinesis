@@ -58,7 +58,9 @@ func (fifo *Fifo) ReadFifo(wg *sync.WaitGroup) (err error) {
 	for scanner.Scan() {
 
 		// Still a tiny race condition here. Better than it was, but could
-		// be improves as we could lose a message during shutdown.
+		// be improves as we could lose a message during shutdown. Add a
+		// sleep above this line to prove the race condition.
+		// https://github.com/acquia/fifo2kinesis/issues/9
 		wg.Add(1)
 		defer wg.Done()
 
