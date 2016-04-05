@@ -33,28 +33,34 @@ func NewFifo(fifoName, streamName, partitionKey string) *Fifo {
 // Kinesis stream.
 func (fifo *Fifo) RunPipeline() error {
 	for {
-
-		logger.Debug("reading data from fifo: %s", fifo.name)
-		file, err := os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
-		if err != nil {
+		if err := fifo.ReadFifo(); err != nil {
 			return err
-		}
-
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanLines)
-
-		for scanner.Scan() {
-			data := scanner.Bytes()
-			logger.Debug("line read from fifo: %s", data)
-			if err := fifo.PublishDataRecord(data); err != nil {
-				return err
-			}
 		}
 	}
 
 	return nil
+}
+
+// ReadFifo reads a line from the fifo and poblishes the data record.
+func (fifo *Fifo) ReadFifo() {
+	logger.Debug("reading data from fifo: %s", fifo.name)
+	file, err := os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		data := scanner.Bytes()
+		logger.Debug("line read from fifo: %s", data)
+		if err := fifo.PublishDataRecord(data); err != nil {
+			return err
+		}
+	}
 }
 
 // PublishDataRecord publishes individual data records to a Kinesis stream.
