@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/spf13/pflag"
@@ -75,31 +76,34 @@ func main() {
 // StartPipeline sets up the event handler continuously runs the pipeline,
 // i.e. reads data from the FIFO and published data records to Kinesis.
 func StartPipeline(fifo *Fifo) {
+	wg := &sync.WaitGroup{}
 	logger.Notice("starting pipeline")
 
-	stop := make(chan bool)
-	go EventListener(stop)
+	shutdown := make(chan bool)
+	go EventListener(shutdown)
 
 	go func() {
-		if err := fifo.RunPipeline(); err != nil {
+		if err := fifo.RunPipeline(wg); err != nil {
 			logger.Fatal(err)
 		}
 	}()
 
-	<-stop
+	<-shutdown
+
+	wg.Wait()
 	logger.Notice("pipeline stopped")
 }
 
-// EventListener listens for signals in order to stop the application.
-func EventListener(stop chan bool) {
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+// EventListener listens for signals in order to shutdown the application.
+func EventListener(shutdown chan bool) {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
 		select {
-		case <-quit:
+		case <-ch:
 			logger.Notice("stopping pipeline")
-			stop <- true
+			shutdown <- true
 			break
 		}
 	}

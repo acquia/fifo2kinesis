@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -31,22 +32,22 @@ func NewFifo(fifoName, streamName, partitionKey string) *Fifo {
 // RunPipeline reads lines from the named pipe and publishes data records to
 // Kinesis. It opens "fifo-name" and publishes records to the "stream-name"
 // Kinesis stream.
-func (fifo *Fifo) RunPipeline() error {
+func (fifo *Fifo) RunPipeline(wg *sync.WaitGroup) (err error) {
 	for {
-		if err := fifo.ReadFifo(); err != nil {
-			return err
+		if err = fifo.ReadFifo(wg); err != nil {
+			return
 		}
 	}
-
-	return nil
 }
 
 // ReadFifo reads a line from the fifo and poblishes the data record.
-func (fifo *Fifo) ReadFifo() {
+func (fifo *Fifo) ReadFifo(wg *sync.WaitGroup) (err error) {
+	var file *os.File
+
 	logger.Debug("reading data from fifo: %s", fifo.name)
-	file, err := os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
+	file, err = os.OpenFile(fifo.name, os.O_RDONLY, os.ModeNamedPipe)
 	if err != nil {
-		return err
+		return
 	}
 
 	defer file.Close()
@@ -55,12 +56,20 @@ func (fifo *Fifo) ReadFifo() {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
+
+		// Still a tiny race condition here. Better than it was, but could
+		// be improves as we could lose a message during shutdown.
+		wg.Add(1)
+		defer wg.Done()
+
 		data := scanner.Bytes()
 		logger.Debug("line read from fifo: %s", data)
-		if err := fifo.PublishDataRecord(data); err != nil {
-			return err
+		if err = fifo.PublishDataRecord(data); err != nil {
+			return
 		}
 	}
+
+	return
 }
 
 // PublishDataRecord publishes individual data records to a Kinesis stream.
