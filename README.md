@@ -3,8 +3,6 @@
 This app continuously reads data from a named pipe (FIFO) and publishes it
 to a Kinesis stream.
 
-**Disclaimer**: [fluentd](http://www.fluentd.org/) is probably a better option for sending logs to kinesis.
-
 ## Usage
 
 Create a named pipe:
@@ -15,7 +13,7 @@ mkfifo ./test.pipe
 
 Run the app:
 
-```shel
+```shell
 fifo2kinesis --fifo-name=$(pwd)/test.pipe --stream-name=mystream
 ```
 
@@ -35,6 +33,7 @@ available:
 
 * `--fifo-name`, `FIFO2KINESIS_FIFO_NAME`: The absolute path of the named pipe.
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
+* `--partition-key`, FIFO2KINESIS_PARTITION_KEY: The partition key, a random string if omitted.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
 The application also requires credentials to publish to the specified
@@ -59,6 +58,9 @@ exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
 ```
 
 ### Publishing Logs From Syslog NG
+
+**Disclaimer**: [fluentd](http://www.fluentd.org/) is probably a better
+option for sending logs to Kinesis.
 
 Syslog NG provides the capability to use a named pipe as a destination. Use
 this app to read log messages from the FIFO and publish them to a Kenisis
