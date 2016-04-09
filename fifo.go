@@ -40,7 +40,7 @@ func (fifo *Fifo) RunPipeline(wg *sync.WaitGroup) (err error) {
 	}
 }
 
-// ReadFifo reads a line from the fifo and poblishes the data record.
+// ReadFifo reads a line from the fifo and publishes the data record.
 func (fifo *Fifo) ReadFifo(wg *sync.WaitGroup) (err error) {
 	var file *os.File
 
@@ -58,7 +58,7 @@ func (fifo *Fifo) ReadFifo(wg *sync.WaitGroup) (err error) {
 	for scanner.Scan() {
 
 		// Still a tiny race condition here. Better than it was, but could
-		// be improves as we could lose a message during shutdown. Add a
+		// be improved since we could lose a message during shutdown. Add a
 		// sleep above this line to prove the race condition.
 		// https://github.com/acquia/fifo2kinesis/issues/9
 		wg.Add(1)
