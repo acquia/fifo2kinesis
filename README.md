@@ -33,7 +33,7 @@ available:
 
 * `--fifo-name`, `FIFO2KINESIS_FIFO_NAME`: The absolute path of the named pipe.
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
-* `--partition-key`, FIFO2KINESIS_PARTITION_KEY: The partition key, a random string if omitted.
+* `--partition-key`, `FIFO2KINESIS_PARTITION_KEY`: The partition key, a random string if omitted.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
 The application also requires credentials to publish to the specified
