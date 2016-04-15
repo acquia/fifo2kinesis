@@ -42,7 +42,7 @@ func init() {
 	conf.BindPFlag("partition-key", pflag.Lookup("partition-key"))
 	conf.SetDefault("partition-key", "")
 
-	pflag.StringP("stream-name", "n", "", "The name of the Kinesis stream")
+	pflag.StringP("stream-name", "s", "", "The name of the Kinesis stream")
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
 
