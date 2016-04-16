@@ -34,7 +34,7 @@ available:
 * `--fifo-name`, `FIFO2KINESIS_FIFO_NAME`: The absolute path of the named pipe.
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
 * `--partition-key`, `FIFO2KINESIS_PARTITION_KEY`: The partition key, a random string if omitted.
-* `--buffer-queue-limit`, `FIFO2KINESIS_BUFFER_QUEUE_LIMIT`: The of items that trigger a buffer flush.
+* `--buffer-queue-limit`, `FIFO2KINESIS_BUFFER_QUEUE_LIMIT`: The number of items that trigger a buffer flush.
 * `--flush-interval`, `FIFO2KINESIS_FLUSH_INTERVAL`: The number of seconds before the buffer is flushed.
 * `--flush-handler`, `FIFO2KINESIS_FLUSH_HANDLER`: Defaults to "kinesis", use "logger" for debugging.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
