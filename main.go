@@ -134,6 +134,8 @@ func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
 	logger.Notice("starting pipeline")
 	wg := &sync.WaitGroup{}
 
+	// Ths code follows the pipeline pattern.
+	// https://blog.golang.org/pipelines
 	lines := ReadLines(fifo, wg)
 	chunks := WriteToBuffer(lines, buffer)
 	FlushBuffer(chunks, buffer, wg)

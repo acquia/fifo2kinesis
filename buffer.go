@@ -35,8 +35,8 @@ func (w *StandardBufferWriter) Write(lines <-chan string, chunks chan []string) 
 				forceFlush <- true
 
 				// Send a flush command to unblock the fifo read in case no
-				// lines are being written to the fifo. This command is ignored
-				// by BufferWriter, the forceFlush channel is what matters.
+				// lines are being written to the fifo. This command is
+				// ignored below, the forceFlush channel is what matters.
 				w.Fifo.SendCommand("flush")
 			}
 		}()
