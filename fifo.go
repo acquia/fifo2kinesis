@@ -11,7 +11,9 @@ type Fifo struct {
 }
 
 // SendCommand writes a line to the fifo that the pipeline interprets as
-// a command to perform some action.
+// a command to perform some action. This is necessary because reading from
+// the fifo blocks until something is written to it. This is how we chose to
+// get around this challenge.
 func (f *Fifo) SendCommand(cmd string) error {
 	file, err := os.OpenFile(f.Name, os.O_RDWR, os.ModeNamedPipe)
 	if err != nil {
@@ -32,6 +34,8 @@ func (f *Fifo) Scan(out chan string) error {
 	stop := false
 	for {
 
+		// This statement blocks until a line is written to the fifo. This
+		// is why we have the write ".stop" to the fifo during shutdown.
 		file, err := os.OpenFile(f.Name, os.O_RDONLY, os.ModeNamedPipe)
 		if err != nil {
 			return err
