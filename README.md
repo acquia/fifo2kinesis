@@ -8,19 +8,19 @@ to a Kinesis stream.
 Create a named pipe:
 
 ```shell
-mkfifo ./test.pipe
+mkfifo ./kinesis.pipe
 ```
 
 Run the app:
 
 ```shell
-fifo2kinesis --fifo-name=$(pwd)/test.pipe --stream-name=mystream
+fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --stream-name=mystream
 ```
 
 Write to the FIFO:
 
 ```shell
-echo "Streamed at $(date)" > test.pipe
+echo "Streamed at $(date)" > kinesis.pipe
 ```
 
 The line will be published to the `mystream` Kinesis stream.
