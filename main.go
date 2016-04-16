@@ -30,6 +30,10 @@ func init() {
 
 	viper.SetConfigName("fifo2kinesis")
 
+	pflag.IntP("buffer-queue-limit", "l", 1, "The maximum number of items in the buffer before it is flushed")
+	conf.BindPFlag("buffer-queue-limit", pflag.Lookup("buffer-queue-limit"))
+	conf.SetDefault("buffer-queue-limit", 1)
+
 	pflag.BoolP("debug", "d", false, "Show debug level log messages")
 	conf.BindPFlag("debug", pflag.Lookup("debug"))
 	conf.SetDefault("debug", "")
@@ -37,6 +41,14 @@ func init() {
 	pflag.StringP("fifo-name", "f", "", "The absolute path of the named pipe, e.g. /var/test.pipe")
 	conf.BindPFlag("fifo-name", pflag.Lookup("fifo-name"))
 	conf.SetDefault("fifo-name", "")
+
+	pflag.StringP("flush-handler", "h", "kinesis", "Defaults to \"kinesis\", use \"logger\" for debugging")
+	conf.BindPFlag("flush-handler", pflag.Lookup("flush-handler"))
+	conf.SetDefault("flush-handler", "kinesis")
+
+	pflag.IntP("flush-interval", "i", 0, "The number of seconds before the buffer is flushed and written to Kinesis")
+	conf.BindPFlag("flush-interval", pflag.Lookup("flush-interval"))
+	conf.SetDefault("flush-interval", 0)
 
 	pflag.StringP("partition-key", "p", "", "The partition key, defaults to a 12 character random string if omitted")
 	conf.BindPFlag("partition-key", pflag.Lookup("partition-key"))
@@ -59,52 +71,121 @@ func init() {
 
 func main() {
 
+	h := conf.GetString("flush-handler")
+	if h != "kinesis" && h != "logger" {
+		logger.Fatalf("flush handler not valid: %s", h)
+	}
+
 	fn := conf.GetString("fifo-name")
 	if fn == "" {
 		logger.Fatal("missing required option: fifo-name")
 	}
 
 	sn := conf.GetString("stream-name")
-	if sn == "" {
+	if h == "kinesis" && sn == "" {
 		logger.Fatal("missing required option: stream-name")
 	}
 
-	pk := conf.GetString("partition-key")
-	StartPipeline(NewFifo(fn, sn, pk))
+	fifo := &Fifo{fn}
+
+	bw := &StandardBufferWriter{
+		Fifo:          fifo,
+		FlushInterval: conf.GetInt("flush-interval"),
+		QueueLimit:    conf.GetInt("buffer-queue-limit"),
+	}
+
+	var bf BufferFlusher
+	if h == "kinesis" {
+		pk := conf.GetString("partition-key")
+		bf = NewKinesisBufferFlusher(sn, pk)
+	} else {
+		bf = &LoggerBufferFlusher{}
+	}
+
+	shutdown := EventListener()
+	RunPipeline(fifo, &Buffer{bw, bf}, shutdown)
 }
 
-// StartPipeline sets up the event handler continuously runs the pipeline,
-// i.e. reads data from the FIFO and published data records to Kinesis.
-func StartPipeline(fifo *Fifo) {
-	wg := &sync.WaitGroup{}
-	logger.Notice("starting pipeline")
-
+// EventListener listens for SIGINT and SIGTERM signals and notifies the
+// shutdown channel if it detects that either one was sent.
+func EventListener() <-chan bool {
 	shutdown := make(chan bool)
-	go EventListener(shutdown)
 
 	go func() {
-		if err := fifo.RunPipeline(wg); err != nil {
-			logger.Fatal(err)
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+
+		for {
+			select {
+			case <-ch:
+				logger.Debug("shutdown signal received")
+				shutdown <- true
+				break
+			}
 		}
 	}()
 
-	<-shutdown
+	return shutdown
+}
 
+// RunPipeline runs the pipeline that reads lines from the fifo, buffers the
+// data, and writes records to Kinesis.
+func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
+	logger.Notice("starting pipeline")
+	wg := &sync.WaitGroup{}
+
+	lines := ReadLines(fifo, wg)
+	chunks := WriteToBuffer(lines, buffer)
+	FlushBuffer(chunks, buffer, wg)
+
+	<-shutdown
+	logger.Notice("stopping pipeline")
+
+	fifo.SendCommand("stop")
 	wg.Wait()
+
 	logger.Notice("pipeline stopped")
 }
 
-// EventListener listens for signals in order to shutdown the application.
-func EventListener(shutdown chan bool) {
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+// ReadLines reads lines from the fifo until a notification is sent to the
+// stop channel. This is the source of the pipeline.
+func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
+	lines := make(chan string)
 
-	for {
-		select {
-		case <-ch:
-			logger.Notice("stopping pipeline")
-			shutdown <- true
-			break
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer close(lines)
+		if err := fifo.Scan(lines); err != nil {
+			logger.Crit("error reading from fifo: ", err)
 		}
-	}
+	}()
+
+	return lines
+}
+
+// WriteToBuffer fills the buffer with lines and turns them into groups of
+// records that are published to Kinesis.
+func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
+
+	// TODO Figure out how many chunks we are willing to hold in memory.
+	// We need a buffered channel so that ReadLines() is not blocked waiting
+	// for buffer to be available. The max number of messages stored in
+	// memory before blocking happens is 100 * the queue limit.
+	chunks := make(chan []string, 100)
+
+	go func() {
+		defer close(chunks)
+		buffer.Write(lines, chunks)
+	}()
+
+	return chunks
+}
+
+func FlushBuffer(chunks <-chan []string, buffer *Buffer, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		buffer.Flush(chunks)
+	}()
 }
