@@ -30,9 +30,9 @@ func init() {
 
 	viper.SetConfigName("fifo2kinesis")
 
-	pflag.IntP("buffer-queue-limit", "l", 1, "The maximum number of items in the buffer before it is flushed")
+	pflag.IntP("buffer-queue-limit", "l", 500, "The maximum number of items in the buffer before it is flushed")
 	conf.BindPFlag("buffer-queue-limit", pflag.Lookup("buffer-queue-limit"))
-	conf.SetDefault("buffer-queue-limit", 1)
+	conf.SetDefault("buffer-queue-limit", 500)
 
 	pflag.BoolP("debug", "d", false, "Show debug level log messages")
 	conf.BindPFlag("debug", pflag.Lookup("debug"))
@@ -46,9 +46,9 @@ func init() {
 	conf.BindPFlag("flush-handler", pflag.Lookup("flush-handler"))
 	conf.SetDefault("flush-handler", "kinesis")
 
-	pflag.IntP("flush-interval", "i", 0, "The number of seconds before the buffer is flushed and written to Kinesis")
+	pflag.IntP("flush-interval", "i", 5, "The number of seconds before the buffer is flushed and written to Kinesis")
 	conf.BindPFlag("flush-interval", pflag.Lookup("flush-interval"))
-	conf.SetDefault("flush-interval", 0)
+	conf.SetDefault("flush-interval", 5)
 
 	pflag.StringP("partition-key", "p", "", "The partition key, defaults to a 12 character random string if omitted")
 	conf.BindPFlag("partition-key", pflag.Lookup("partition-key"))
@@ -86,12 +86,19 @@ func main() {
 		logger.Fatal("missing required option: stream-name")
 	}
 
+	ql := conf.GetInt("buffer-queue-limit")
+	if ql < 1 {
+		logger.Fatal("buffer queue limit must be greater than 0")
+	} else if h == "kinesis" && ql > 500 {
+		logger.Fatal("buffer queue cannot exceed 500 items when using the kinesis handler")
+	}
+
 	fifo := &Fifo{fn}
 
 	bw := &MemoryBufferWriter{
 		Fifo:          fifo,
 		FlushInterval: conf.GetInt("flush-interval"),
-		QueueLimit:    conf.GetInt("buffer-queue-limit"),
+		QueueLimit:    ql,
 	}
 
 	var bf BufferFlusher

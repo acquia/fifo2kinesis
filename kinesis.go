@@ -30,20 +30,26 @@ func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 
 func (f *KinesisBufferFlusher) Flush(chunks <-chan []string) {
 	for chunk := range chunks {
-		// TODO Create the PutRecords command for Kinesis. We are just
-		// printing this for debugging purposes.
-		for _, line := range chunk {
+		size := len(chunk)
+		if size > 0 {
 
-			params := &kinesis.PutRecordInput{
-				Data:         []byte(line),
-				StreamName:   f.Name,
-				PartitionKey: f.FormatPartitionKey(),
+			records := make([]*kinesis.PutRecordsRequestEntry, len(chunk))
+			for key, line := range chunk {
+				records[key] = &kinesis.PutRecordsRequestEntry{
+					PartitionKey: f.FormatPartitionKey(),
+					Data:         []byte(line),
+				}
 			}
 
-			if output, err := f.kinesis.PutRecord(params); err == nil {
-				logger.Debug("data record published: sequence-number=%s partition-key=%s", *output.SequenceNumber, *params.PartitionKey)
+			params := &kinesis.PutRecordsInput{
+				StreamName: f.Name,
+				Records:    records,
+			}
+
+			if output, err := f.kinesis.PutRecords(params); err == nil {
+				logger.Debug("%v record(s) published to kinesis", size)
 			} else {
-				logger.Error("error publishing data record: %s", err)
+				logger.Error("error publishing %v data record(s): %s", output.FailedRecordCount, err)
 			}
 		}
 	}
