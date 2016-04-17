@@ -31,26 +31,28 @@ func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 func (f *KinesisBufferFlusher) Flush(chunks <-chan []string) {
 	for chunk := range chunks {
 		size := len(chunk)
-		if size > 0 {
+		
+		if size < 1 {
+			continue
+		}
 
-			records := make([]*kinesis.PutRecordsRequestEntry, len(chunk))
-			for key, line := range chunk {
-				records[key] = &kinesis.PutRecordsRequestEntry{
-					PartitionKey: f.FormatPartitionKey(),
-					Data:         []byte(line),
-				}
+		records := make([]*kinesis.PutRecordsRequestEntry, size)
+		for key, line := range chunk {
+			records[key] = &kinesis.PutRecordsRequestEntry{
+				PartitionKey: f.FormatPartitionKey(),
+				Data:         []byte(line),
 			}
+		}
 
-			params := &kinesis.PutRecordsInput{
-				StreamName: f.Name,
-				Records:    records,
-			}
+		params := &kinesis.PutRecordsInput{
+			StreamName: f.Name,
+			Records:    records,
+		}
 
-			if output, err := f.kinesis.PutRecords(params); err == nil {
-				logger.Debug("%v record(s) published to kinesis", size)
-			} else {
-				logger.Error("error publishing %v data record(s): %s", output.FailedRecordCount, err)
-			}
+		if output, err := f.kinesis.PutRecords(params); err == nil {
+			logger.Debug("%v record(s) published to kinesis", size)
+		} else {
+			logger.Error("error publishing %v data record(s): %s", output.FailedRecordCount, err)
 		}
 	}
 }
