@@ -15,17 +15,17 @@ type Buffer struct {
 	BufferFlusher
 }
 
-type StandardBufferWriter struct {
+type MemoryBufferWriter struct {
 	Fifo          *Fifo
 	FlushInterval int
 	QueueLimit    int
 }
 
-func (w *StandardBufferWriter) reset() ([]string, int, bool) {
+func (w *MemoryBufferWriter) reset() ([]string, int, bool) {
 	return make([]string, w.QueueLimit), 0, false
 }
 
-func (w *StandardBufferWriter) Write(lines <-chan string, chunks chan []string) {
+func (w *MemoryBufferWriter) Write(lines <-chan string, chunks chan []string) {
 	forceFlush := make(chan bool, 1)
 
 	if w.FlushInterval > 0 {

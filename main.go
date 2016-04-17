@@ -88,7 +88,7 @@ func main() {
 
 	fifo := &Fifo{fn}
 
-	bw := &StandardBufferWriter{
+	bw := &MemoryBufferWriter{
 		Fifo:          fifo,
 		FlushInterval: conf.GetInt("flush-interval"),
 		QueueLimit:    conf.GetInt("buffer-queue-limit"),
