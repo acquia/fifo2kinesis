@@ -3,6 +3,16 @@
 This app continuously reads data from a named pipe (FIFO) and publishes it
 to a Kinesis stream.
 
+## Installation
+
+This project uses the [GB build tool](https://getgb.io/). Assuming that GB
+is installed, run the following command in the project's root directory to
+build the `fifo2kinesis` binary:
+
+```shell
+gb build
+```
+
 ## Usage
 
 Create a named pipe:
@@ -14,7 +24,7 @@ mkfifo ./kinesis.pipe
 Run the app:
 
 ```shell
-fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --stream-name=mystream
+./bin/fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --stream-name=mystream
 ```
 
 Write to the FIFO:
@@ -86,7 +96,7 @@ mkfifo /var/syslog.pipe
 Start the app:
 
 ```
-fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=mystream
+./bin/fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=mystream
 ```
 
 Restart syslog-ng:
