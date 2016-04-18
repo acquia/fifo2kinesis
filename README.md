@@ -1,5 +1,7 @@
 # FIFO to Kinesis Pipeline
 
+[![Build Status](https://travis-ci.com/acquia/fifo2kinesis.svg?token=PH71WkhMufTnsVvCU5rV&branch=master)](https://travis-ci.com/acquia/fifo2kinesis)
+
 This app continuously reads data from a named pipe (FIFO) and publishes it
 to a Kinesis stream.
 
