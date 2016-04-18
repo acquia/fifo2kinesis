@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 
 func NewFifo(t *testing.T) *Fifo {
 
-	name = os.TempDir() + RandomString(8) + ".pipe"
+	name = os.TempDir() + "/" + RandomString(8) + ".pipe"
 	err := syscall.Mkfifo(name, 0600)
 	if err != nil {
 		t.Errorf("error creating fifo: %s", err)
