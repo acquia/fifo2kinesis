@@ -1,10 +1,17 @@
 ---
 sudo: false
+
 language: go
+
+go:
+ - 1.6
+
 before_install:
   - "go get github.com/constabulary/gb/..."
+
 install:
   - "gb build"
   - "eval $(bin/get-stack-env)"
+
 script:
   - "gb test"
