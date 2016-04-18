@@ -1,6 +1,3 @@
----
-sudo: false
-
 language: go
 
 go:
@@ -11,7 +8,6 @@ before_install:
 
 install:
   - "gb build"
-  - "eval $(bin/get-stack-env)"
 
 script:
   - "gb test"
