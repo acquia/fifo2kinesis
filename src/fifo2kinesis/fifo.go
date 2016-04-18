@@ -10,21 +10,27 @@ type Fifo struct {
 	Name string
 }
 
-// SendCommand writes a line to the fifo that the pipeline interprets as
-// a command to perform some action. This is necessary because reading from
-// the fifo blocks until something is written to it. This is how we chose to
-// get around this challenge.
-func (f *Fifo) SendCommand(cmd string) error {
+// Write writes a line to the fifo.
+func (f *Fifo) WriteString(s string) error {
 	file, err := os.OpenFile(f.Name, os.O_RDWR, os.ModeNamedPipe)
 	if err != nil {
 		return err
 	}
 
 	defer file.Close()
-	_, err = file.WriteString("." + cmd)
-	logger.Debug("command sent: %s", cmd)
+	_, err = file.WriteString(s)
 
 	return err
+}
+
+// SendCommand writes a line to the fifo that the pipeline interprets as
+// a command to perform some action. This is necessary because reading from
+// the fifo blocks until something is written to it. This is how we chose to
+// get around this challenge.
+func (f *Fifo) SendCommand(cmd string) (err error) {
+	err = f.WriteString("." + cmd)
+	logger.Debug("command sent: %s", cmd)
+	return
 }
 
 // Scan reads lines from the fifo and sends them to the out channel. The
