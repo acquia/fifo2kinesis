@@ -10,7 +10,12 @@ type Fifo struct {
 	Name string
 }
 
-// Write writes a line to the fifo.
+// Writes a line to the fifo.
+func (f *Fifo) Writeln(s string) error {
+	return f.WriteString(s + "\n")
+}
+
+// Write writes a string to the fifo.
 func (f *Fifo) WriteString(s string) error {
 	file, err := os.OpenFile(f.Name, os.O_WRONLY, os.ModeNamedPipe)
 	if err != nil {
@@ -28,7 +33,7 @@ func (f *Fifo) WriteString(s string) error {
 // the fifo blocks until something is written to it. This is how we chose to
 // get around this challenge.
 func (f *Fifo) SendCommand(cmd string) (err error) {
-	err = f.WriteString("." + cmd)
+	err = f.Writeln("." + cmd)
 	logger.Debug("command sent: %s", cmd)
 	return
 }

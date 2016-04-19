@@ -135,5 +135,4 @@ Restart syslog-ng:
 service syslog-ng restart
 ```
 
-All log messages will be published to Kinesis. Not that a 5 second buffer is
-set by default; Adjust the `--flush-interval` option to fit your needs.
+The log stream will now be published to Kinesis.
