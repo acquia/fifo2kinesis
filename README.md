@@ -3,7 +3,21 @@
 [![Build Status](https://travis-ci.com/acquia/fifo2kinesis.svg?token=PH71WkhMufTnsVvCU5rV&branch=master)](https://travis-ci.com/acquia/fifo2kinesis)
 
 This app continuously reads data from a named pipe (FIFO) and publishes it
-to a Kinesis stream.
+to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
+
+## Why?
+
+FIFOs are great way to send data from one application to another. Having an
+open pipe that ships data to Kinesis facilitates a lot of interesting use
+cases. One such example is using the named pipe support in
+[rsyslog](http://www.rsyslog.com/doc/v8-stable/configuration/modules/ompipe.html)
+and [syslog-ng](https://www.balabit.com/sites/default/files/documents/syslog-ng-ose-latest-guides/en/syslog-ng-ose-guide-admin/html/configuring-destinations-pipe.html)
+to send log streams to Kinesis.
+
+Admittedly, it would be really easy to write a handful of lines of code in
+a bash script using the AWS CLI to achieve the same result, however the
+fifo2kinesis app buffers data read from the FIFO and batch-publishes it to
+Kinesis in order to reliably and efficiently process large data streams.
 
 ## Installation
 
@@ -36,6 +50,18 @@ echo "Streamed at $(date)" > kinesis.pipe
 ```
 
 The line will be published to the `mystream` Kinesis stream.
+
+#### For the impatient among us
+
+If you are impatient like me and want your oompa loompa now, modify the
+`--buffer-queue-limit`, `--flush-interval`, and `--flush-handler` options so
+that what you send to the FIFO is written to STDOUT immediately instead of a
+buffered write to Kinesis. This doesn't do much, but it provides immediate
+gratification and shows how the app works when you play with the options.
+
+```shell
+./bin/fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --buffer-queue-limit=1 --flush-interval=0 --flush-handler=logger
+```
 
 ### Configuration
 
