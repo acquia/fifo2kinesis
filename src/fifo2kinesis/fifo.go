@@ -12,7 +12,7 @@ type Fifo struct {
 
 // Write writes a line to the fifo.
 func (f *Fifo) WriteString(s string) error {
-	file, err := os.OpenFile(f.Name, os.O_RDWR, os.ModeNamedPipe)
+	file, err := os.OpenFile(f.Name, os.O_WRONLY, os.ModeNamedPipe)
 	if err != nil {
 		return err
 	}

@@ -7,19 +7,9 @@ import (
 	"time"
 )
 
-var name string
-
-func TestMain(m *testing.M) {
-
-	code := m.Run()
-
-	os.Remove(name)
-	os.Exit(code)
-}
-
 func NewFifo(t *testing.T) *Fifo {
 
-	name = os.TempDir() + "/" + RandomString(8) + ".pipe"
+	name := os.TempDir() + "/fifo2kinesis-" + RandomString(8) + ".pipe"
 	err := syscall.Mkfifo(name, 0600)
 	if err != nil {
 		t.Errorf("error creating fifo: %s", err)
@@ -46,7 +36,7 @@ func TestFifoWriteScan(t *testing.T) {
 
 	timeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second * 5)
 		timeout <- true
 	}()
 
