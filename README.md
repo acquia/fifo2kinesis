@@ -7,8 +7,8 @@ to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
 
 ## Why?
 
-FIFOs are great way to send data from one application to another. Having an
-open pipe that ships data to Kinesis facilitates a lot of interesting use
+FIFOs are a great way to send data from one application to another. Having
+an open pipe that ships data to Kinesis facilitates a lot of interesting use
 cases. One such example is using the named pipe support in
 [rsyslog](http://www.rsyslog.com/doc/v8-stable/configuration/modules/ompipe.html)
 and [syslog-ng](https://www.balabit.com/sites/default/files/documents/syslog-ng-ose-latest-guides/en/syslog-ng-ose-guide-admin/html/configuring-destinations-pipe.html)
@@ -49,9 +49,10 @@ Write to the FIFO:
 echo "Streamed at $(date)" > kinesis.pipe
 ```
 
-The line will be published to the `mystream` Kinesis stream.
+The line will be published to the `mystream` Kinesis stream within the
+default flush interval of 5 seconds.
 
-#### For the impatient among us
+##### Quick start for the impatient among us
 
 If you are impatient like me and want your oompa loompa now, modify the
 `--buffer-queue-limit`, `--flush-interval`, and `--flush-handler` options so
@@ -100,12 +101,13 @@ exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
 
 ### Publishing Logs From Syslog NG
 
-**Disclaimer**: [fluentd](http://www.fluentd.org/) is probably a better
-option for sending logs to Kinesis.
+**Disclaimer**: You should take a look at [fluentd](http://www.fluentd.org/).
+You won't find an argument in this README as to why you should choose one
+over the other. I want to make sure you have all the options in front of you
+so that you can make the best decision for your specific use case.
 
 Syslog NG provides the capability to use a named pipe as a destination. Use
-this app to read log messages from the FIFO and publish them to a Kenisis
-stream.
+fifo2kinesis to read log messages from the FIFO and publish them Kenisis.
 
 On Ubuntu 14.04, create a file named `/etc/syslog-ng/conf.d/01-kinesis.conf`
 with the following configration:
@@ -133,4 +135,5 @@ Restart syslog-ng:
 service syslog-ng restart
 ```
 
-All log messages will be published to Kinesis.
+All log messages will be published to Kinesis. Not that a 5 second buffer is
+set by default; Adjust the `--flush-interval` option to fit your needs.
