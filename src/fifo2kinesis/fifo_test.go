@@ -18,7 +18,7 @@ func NewFifo(t *testing.T) *Fifo {
 	return &Fifo{name}
 }
 
-func TestFifoWriteScan(t *testing.T) {
+func TestFifoWriteAndScan(t *testing.T) {
 	fifo := NewFifo(t)
 	defer os.Remove(fifo.Name)
 
@@ -36,7 +36,7 @@ func TestFifoWriteScan(t *testing.T) {
 
 	timeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 		timeout <- true
 	}()
 
@@ -78,5 +78,58 @@ func TestStopCommand(t *testing.T) {
 	case <-timeout:
 		t.Error("timeout waiting scanning to stop")
 	case <-stopped:
+	}
+}
+
+func TestScanDrain(t *testing.T) {
+	fifo := NewFifo(t)
+	defer os.Remove(fifo.Name)
+
+	out := make(chan string, 1)
+
+	go func() {
+		fifo.Scan(out)
+		close(out)
+	}()
+
+	go func() {
+		// Write four lines inclusing a ".stop" comman in the middle. If all
+		// goes well we should read three lines from the out channel.
+		if err := fifo.WriteString("zero\n.stop\none\ntwo"); err != nil {
+			t.Errorf("error sending stop command: %s", err)
+		}
+	}()
+
+	done := make(chan bool)
+
+	go func() {
+		key := 0
+		lines := make([]string, 3)
+		for line := range out {
+			lines[key] = line
+			key++
+		}
+
+		if key != 3 {
+			t.Errorf("fifo scan drain test failed: got %q lines", key)
+		}
+
+		if lines[0] != "zero" || lines[1] != "one" || lines[2] != "two" {
+			t.Errorf("fifo scan drain test failed: got %q", lines)
+		}
+
+		done <- true
+	}()
+
+	timeout := make(chan bool, 1)
+	go func() {
+		time.Sleep(time.Second * 3)
+		timeout <- true
+	}()
+
+	select {
+	case <-timeout:
+		t.Error("timeout waiting scan drain test to complete")
+	case <-done:
 	}
 }

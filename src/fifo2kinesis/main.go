@@ -58,6 +58,8 @@ func init() {
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
 
+	// TODO figure out how to handle this when running tests. We want to be
+	// able to pass things like `gb test -v`, which fails due to this line.
 	pflag.Parse()
 
 	if conf.GetBool("debug") {
