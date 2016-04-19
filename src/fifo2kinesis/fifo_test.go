@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewFifo(t *testing.T) *Fifo {
+func TempFifo(t *testing.T) *Fifo {
 
 	name := os.TempDir() + "/fifo2kinesis-" + RandomString(8) + ".pipe"
 	err := syscall.Mkfifo(name, 0600)
@@ -19,7 +19,7 @@ func NewFifo(t *testing.T) *Fifo {
 }
 
 func TestFifoWriteAndScan(t *testing.T) {
-	fifo := NewFifo(t)
+	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
 	out := make(chan string, 1)
@@ -51,7 +51,7 @@ func TestFifoWriteAndScan(t *testing.T) {
 }
 
 func TestStopCommand(t *testing.T) {
-	fifo := NewFifo(t)
+	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
 	out := make(chan string, 1)
@@ -82,7 +82,7 @@ func TestStopCommand(t *testing.T) {
 }
 
 func TestScanDrain(t *testing.T) {
-	fifo := NewFifo(t)
+	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
 	out := make(chan string, 1)
