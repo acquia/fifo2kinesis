@@ -31,7 +31,7 @@ func (w *MemoryBufferWriter) Write(lines <-chan string, chunks chan []string) {
 	if w.FlushInterval > 0 {
 		go func() {
 			for {
-				time.Sleep(time.Second * 5)
+				time.Sleep(time.Second * time.Duration(w.FlushInterval))
 				forceFlush <- true
 
 				// Send a flush command to unblock the fifo read in case no
