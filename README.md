@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.com/acquia/fifo2kinesis.svg?token=PH71WkhMufTnsVvCU5rV&branch=master)](https://travis-ci.com/acquia/fifo2kinesis)
 
-This app continuously reads data from a named pipe (FIFO) and publishes it
-to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
+This app continuously reads data from a [named pipe (FIFO)](https://en.wikipedia.org/wiki/Named_pipe)
+and publishes it to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
 
 ## Why?
 
@@ -52,7 +52,7 @@ echo "Streamed at $(date)" > kinesis.pipe
 The line will be published to the `mystream` Kinesis stream within the
 default flush interval of 5 seconds.
 
-##### Quick start for the impatient among us
+#### Quick start for the impatient among us
 
 If you are impatient like me and want your oompa loompa now, modify the
 `--buffer-queue-limit`, `--flush-interval`, and `--flush-handler` options so
