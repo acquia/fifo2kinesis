@@ -168,7 +168,12 @@ func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
 		defer wg.Done()
 		defer close(lines)
 		if err := fifo.Scan(lines); err != nil {
-			logger.Crit("error reading from fifo: ", err)
+			if perr, ok := err.(*os.PathError); ok {
+				logger.Crit(perr.Error())
+			} else {
+				logger.Crit("error reading from fifo: %s", err)
+			}
+			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 		}
 	}()
 
