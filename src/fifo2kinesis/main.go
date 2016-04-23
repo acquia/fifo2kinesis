@@ -64,8 +64,8 @@ func init() {
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
 
-	// TODO figure out how to handle this when running tests. We want to be
-	// able to pass things like `gb test -v`, which fails due to this line.
+	// TODO Options cannot be used with `gb test`, conflicts with application options
+	// https://github.com/acquia/fifo2kinesis/issues/25
 	pflag.Parse()
 
 	if conf.GetBool("debug") {
