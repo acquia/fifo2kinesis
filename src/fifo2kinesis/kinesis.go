@@ -28,10 +28,10 @@ func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 	}
 }
 
-func (f *KinesisBufferFlusher) Flush(chunks <-chan []string) {
+func (f *KinesisBufferFlusher) Flush(chunks <-chan []string, failed chan []string) {
 	for chunk := range chunks {
 		size := len(chunk)
-		
+
 		if size < 1 {
 			continue
 		}
@@ -49,10 +49,31 @@ func (f *KinesisBufferFlusher) Flush(chunks <-chan []string) {
 			Records:    records,
 		}
 
-		if output, err := f.kinesis.PutRecords(params); err == nil {
-			logger.Debug("%v record(s) published to kinesis", size)
-		} else {
-			logger.Error("error publishing %v data record(s): %s", output.FailedRecordCount, err)
+		// Check if all the records failed to be published.
+		output, err := f.kinesis.PutRecords(params)
+		if err != nil {
+			logger.Error("error publishing record(s) to kinesis: %s", err)
+			failed <- chunk
+			continue
+		}
+
+		// Check if some of the records failed to be published.
+		if *output.FailedRecordCount != 0 {
+			logger.Error("error publishing %v record(s) to kinesis: %s", *output.FailedRecordCount, err)
+			subchunk := make([]string, *output.FailedRecordCount)
+
+			for key, record := range output.Records {
+				if record.ErrorCode != nil {
+					subchunk[key] = chunk[key]
+				}
+			}
+
+			failed <- subchunk
+		}
+
+		total := int64(size) - *output.FailedRecordCount
+		if total != 0 {
+			logger.Debug("published %v record(s) to kinesis", total)
 		}
 	}
 }

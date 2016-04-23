@@ -16,8 +16,9 @@ to send log streams to Kinesis.
 
 Admittedly, it would be really easy to write a handful of lines of code in
 a bash script using the AWS CLI to achieve the same result, however the
-fifo2kinesis app buffers data read from the FIFO and batch-publishes it to
-Kinesis in order to reliably and efficiently process large data streams.
+fifo2kinesis app buffers data read from the FIFO, batch-publishes it to
+Kinesis, and leverages a persistent failure handling mechanism in order to
+efficiently and reliably process large data streams.
 
 ## Installation
 
@@ -74,6 +75,7 @@ available:
 * `--stream-name`, `FIFO2KINESIS_STREAM_NAME`: The name of the Kinesis stream.
 * `--partition-key`, `FIFO2KINESIS_PARTITION_KEY`: The partition key, a random string if omitted.
 * `--buffer-queue-limit`, `FIFO2KINESIS_BUFFER_QUEUE_LIMIT`: The number of items that trigger a buffer flush.
+* `--failed-attempts-dir`, `FIFO2KINESIS_FAILED_ATTEMPTS_DIR`: The directory that logs failed attempts for retry.
 * `--flush-interval`, `FIFO2KINESIS_FLUSH_INTERVAL`: The number of seconds before the buffer is flushed.
 * `--flush-handler`, `FIFO2KINESIS_FLUSH_HANDLER`: Defaults to "kinesis", use "logger" for debugging.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
@@ -83,10 +85,6 @@ Kinesis stream. It uses the same [configuration mechanism](http://docs.aws.amazo
 as the AWS CLI tool, minus the command line options.
 
 ### Running With Upstart
-
-The application exits immediately with a non-zero exit code on all AWS
-errors. Therefore it is useful to run the app with an event system such as
-Upstart in order to respawn the service when an error occurs.
 
 ```
 description "FIFO to Kinesis Pipeline"

@@ -6,9 +6,11 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"golang.org/x/sys/unix"
 )
 
 // conf represents the configuration passed to the application via command
@@ -37,6 +39,10 @@ func init() {
 	pflag.BoolP("debug", "d", false, "Show debug level log messages")
 	conf.BindPFlag("debug", pflag.Lookup("debug"))
 	conf.SetDefault("debug", "")
+
+	pflag.StringP("failed-attempts-dir", "D", "", "The path to the directory containing failed attempts")
+	conf.BindPFlag("failed-attempts-dir", pflag.Lookup("failed-attempts-dir"))
+	conf.SetDefault("failed-attempts-dir", "")
 
 	pflag.StringP("fifo-name", "f", "", "The absolute path of the named pipe, e.g. /var/test.pipe")
 	conf.BindPFlag("fifo-name", pflag.Lookup("fifo-name"))
@@ -111,8 +117,25 @@ func main() {
 		bf = &LoggerBufferFlusher{}
 	}
 
+	var fh FailedAttemptHandler
+	dir := conf.GetString("failed-attempts-dir")
+	if dir == "" {
+		fh = &NullFailedAttemptHandler{}
+	} else {
+		stat, err := os.Stat(dir)
+		if os.IsNotExist(err) {
+			logger.Fatal("failed attempts directory does not exist")
+		} else if !stat.IsDir() {
+			logger.Fatal("failed attempts directory is not a directory")
+		} else if unix.Access(dir, unix.R_OK) != nil {
+			logger.Fatal("failed attempts directory is not readable")
+		} else {
+			fh = &FileFailedAttemptHandler{dir, fifo}
+		}
+	}
+
 	shutdown := EventListener()
-	RunPipeline(fifo, &Buffer{bw, bf}, shutdown)
+	RunPipeline(fifo, &Buffer{bw, bf, fh}, shutdown)
 }
 
 // EventListener listens for SIGINT and SIGTERM signals and notifies the
@@ -138,7 +161,8 @@ func EventListener() <-chan bool {
 }
 
 // RunPipeline runs the pipeline that reads lines from the fifo, buffers the
-// data, and writes records to Kinesis.
+// data, flushed the buffer (e.g. published the records to Kinesis), and
+// saves failed requests for retry.
 func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
 	logger.Notice("starting pipeline")
 	wg := &sync.WaitGroup{}
@@ -147,7 +171,10 @@ func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
 	// https://blog.golang.org/pipelines
 	lines := ReadLines(fifo, wg)
 	chunks := WriteToBuffer(lines, buffer)
-	FlushBuffer(chunks, buffer, wg)
+	failed := FlushBuffer(chunks, buffer, wg)
+	HandleFailures(failed, buffer, wg)
+
+	RetryFailedAttempts(buffer)
 
 	<-shutdown
 	logger.Notice("stopping pipeline")
@@ -181,13 +208,14 @@ func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
 }
 
 // WriteToBuffer fills the buffer with lines and turns them into groups of
-// records that are published to Kinesis.
+// records that are send to the flush handler, e.g. Kinesis.
 func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
 
 	// TODO Figure out how many chunks we are willing to hold in memory.
 	// We need a buffered channel so that ReadLines() is not blocked waiting
 	// for buffer to be available. The max number of messages stored in
 	// memory before blocking happens is 100 * the queue limit.
+	// Maybe a --buffer-sise-limit option?
 	chunks := make(chan []string, 100)
 
 	go func() {
@@ -198,10 +226,46 @@ func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
 	return chunks
 }
 
-func FlushBuffer(chunks <-chan []string, buffer *Buffer, wg *sync.WaitGroup) {
+// FlushBuffer batch-processes the lines that were read from the FIFO, e.g.
+// issues a PutRecords command to the Kinesis stream.
+func FlushBuffer(chunks <-chan []string, buffer *Buffer, wg *sync.WaitGroup) <-chan []string {
+	failed := make(chan []string)
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		buffer.Flush(chunks)
+		defer close(failed)
+		buffer.Flush(chunks, failed)
+	}()
+
+	return failed
+}
+
+// HandleFailures saves failed chunks so that processing can be retried.
+// This function is the pipeline's sink.
+func HandleFailures(failed <-chan []string, buffer *Buffer, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for attempt := range failed {
+			logger.Debug("save failed attempt")
+			if err := buffer.SaveAttempt(attempt); err != nil {
+				logger.Error("%s", err)
+			}
+
+		}
+	}()
+}
+
+// RetryFailedAttempts retries the failed attempts that were saved in the
+// HandleFailures function.
+func RetryFailedAttempts(buffer *Buffer) {
+	go func() {
+		for {
+			// TODO Make the retry interval configurable.
+			time.Sleep(time.Second * 30)
+			logger.Debug("retry failed attempts")
+			buffer.Retry()
+		}
 	}()
 }

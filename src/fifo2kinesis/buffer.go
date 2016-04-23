@@ -7,12 +7,18 @@ type BufferWriter interface {
 }
 
 type BufferFlusher interface {
-	Flush(chunks <-chan []string)
+	Flush(chunks <-chan []string, failed chan []string)
+}
+
+type FailedAttemptHandler interface {
+	SaveAttempt(attempt []string) error
+	Retry()
 }
 
 type Buffer struct {
 	BufferWriter
 	BufferFlusher
+	FailedAttemptHandler
 }
 
 type MemoryBufferWriter struct {
@@ -83,10 +89,18 @@ func (w *MemoryBufferWriter) Write(lines <-chan string, chunks chan []string) {
 
 type LoggerBufferFlusher struct{}
 
-func (f *LoggerBufferFlusher) Flush(chunks <-chan []string) {
+func (f *LoggerBufferFlusher) Flush(chunks <-chan []string, failed chan []string) {
 	for chunk := range chunks {
 		for _, line := range chunk {
 			logger.Info(line)
 		}
 	}
 }
+
+type NullFailedAttemptHandler struct{}
+
+func (h NullFailedAttemptHandler) SaveAttempt(attempt []string) error {
+	return nil
+}
+
+func (h NullFailedAttemptHandler) Retry() {}
