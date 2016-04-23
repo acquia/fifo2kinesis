@@ -21,8 +21,8 @@ func (h *FileFailedAttemptHandler) Filepath() string {
 
 func (h *FileFailedAttemptHandler) SaveAttempt(attempt []string) error {
 
-	// TODO although a colision is unlikely, we should loop until we find a
-	// unique filename like TempFile()
+	// TODO Add duplicate file detection when creating retry files
+	// https://github.com/acquia/fifo2kinesis/issues/21
 	file, err := os.OpenFile(h.Filepath(), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
 		return err
@@ -50,7 +50,8 @@ func (h *FileFailedAttemptHandler) Files() []string {
 }
 
 func (h *FileFailedAttemptHandler) Retry() {
-	// TODO make the max number of attempts configurable.
+	// TODO Make the max number of retry attempts configurable
+	// https://github.com/acquia/fifo2kinesis/issues/20
 	i := 0
 
 	for _, filepath := range h.Files() {
@@ -75,7 +76,9 @@ func (h *FileFailedAttemptHandler) RetryAttempt(filename string) error {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	// TODO capture lines that failed and write a new file.
+	// All TODO's related to https://github.com/acquia/fifo2kinesis/issues/22
+
+	// TODO capture lines that failed and write a new file?
 	for scanner.Scan() {
 		line := scanner.Text()
 		h.fifo.Writeln(line)

@@ -211,11 +211,8 @@ func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
 // records that are send to the flush handler, e.g. Kinesis.
 func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
 
-	// TODO Figure out how many chunks we are willing to hold in memory.
-	// We need a buffered channel so that ReadLines() is not blocked waiting
-	// for buffer to be available. The max number of messages stored in
-	// memory before blocking happens is 100 * the queue limit.
-	// Maybe a --buffer-sise-limit option?
+	// TODO Implement a buffer size limit
+	// https://github.com/acquia/fifo2kinesis/issues/23
 	chunks := make(chan []string, 100)
 
 	go func() {
@@ -262,7 +259,8 @@ func HandleFailures(failed <-chan []string, buffer *Buffer, wg *sync.WaitGroup) 
 func RetryFailedAttempts(buffer *Buffer) {
 	go func() {
 		for {
-			// TODO Make the retry interval configurable.
+			// TODO Make the retry interval configurable
+			// https://github.com/acquia/fifo2kinesis/issues/19
 			time.Sleep(time.Second * 30)
 			logger.Debug("retry failed attempts")
 			buffer.Retry()
