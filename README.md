@@ -5,6 +5,8 @@
 This app continuously reads data from a [named pipe (FIFO)](https://en.wikipedia.org/wiki/Named_pipe)
 and publishes it to a [Kinesis](https://aws.amazon.com/kinesis/) stream.
 
+![fifo2kinesis cli demo](/doc/images/fifo2kinesis.gif)
+
 ## Why?
 
 FIFOs are a great way to send data from one application to another. Having
