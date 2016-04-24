@@ -89,6 +89,9 @@ as the AWS CLI tool, minus the command line options.
 
 ### Running With Upstart
 
+Use [Upstart](http://upstart.ubuntu.com/) to start fifo2kinesis during boot
+and supervise it while the system is running.
+
 ```
 description "FIFO to Kinesis Pipeline"
 start on runlevel [2345]
