@@ -18,9 +18,10 @@ to send log streams to Kinesis.
 
 Admittedly, it would be really easy to write a handful of lines of code in
 a bash script using the AWS CLI to achieve the same result, however the
-fifo2kinesis app buffers data read from the FIFO, batch-publishes it to
-Kinesis, and leverages a persistent failure handling mechanism in order to
-efficiently and reliably process large data streams.
+fifo2kinesis app is designed to reliably handle large volumes of data. It
+achieves this by making good use of Go's concurrency primitives, buffering
+and batch publishing data read from the fifo, and handling failures in a
+way that can tolerate network and AWS outages.
 
 ## Installation
 
