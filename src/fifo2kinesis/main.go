@@ -161,7 +161,7 @@ func EventListener() <-chan bool {
 }
 
 // RunPipeline runs the pipeline that reads lines from the fifo, buffers the
-// data, flushed the buffer (e.g. published the records to Kinesis), and
+// data, flushes the buffer (e.g. published the records to Kinesis), and
 // saves failed requests for retry.
 func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
 	logger.Notice("starting pipeline")

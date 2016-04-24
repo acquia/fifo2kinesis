@@ -60,8 +60,13 @@ func (f *Fifo) Scan(out chan string) error {
 		// If we break the loop we lose data. Not sure how to handle that.
 		// Might have to live with the loop running through until the end.
 		// Of course, the app writing to the fifo could continue writing
-		// lines which would prevent the app from shutting down, but that
-		// seems to be the best of the worst options.
+		// lines which would prevent fifo2kinesis from shutting down, but
+		// that seems to be the best of the worst options.
+		//
+		// If you are reading this, consider yourself challenged to find a
+		// better way of doing this. Most people are smarter than me, so I
+		// bet you can do it. I'm rooting for you!
+		//
 		for scanner.Scan() {
 			line := scanner.Text()
 			switch line {
