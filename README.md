@@ -90,7 +90,9 @@ as the AWS CLI tool, minus the command line options.
 ### Running With Upstart
 
 Use [Upstart](http://upstart.ubuntu.com/) to start fifo2kinesis during boot
-and supervise it while the system is running.
+and supervise it while the system is running. Add a file to `/etc/init` with
+the following contents, replacing `/path/to` and `my-stream` according to
+your environment.
 
 ```
 description "FIFO to Kinesis Pipeline"
@@ -100,7 +102,7 @@ respawn
 respawn limit 3 30
 post-stop exec sleep 5
 
-exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stack-name=mystack
+exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stream-name=my-stream
 ```
 
 ### Publishing Logs From Syslog NG
@@ -130,7 +132,7 @@ mkfifo /var/syslog.pipe
 Start the app:
 
 ```
-./bin/fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=mystream
+./bin/fifo2kinesis --fifo-name=/var/syslog.pipe --stream-name=my-stream
 ```
 
 Restart syslog-ng:
