@@ -44,7 +44,7 @@ mkfifo ./kinesis.pipe
 Run the app:
 
 ```shell
-./bin/fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --stream-name=mystream
+./bin/fifo2kinesis --fifo-name=$(pwd)/kinesis.pipe --stream-name=my-stream
 ```
 
 Write to the FIFO:
@@ -53,7 +53,7 @@ Write to the FIFO:
 echo "Streamed at $(date)" > kinesis.pipe
 ```
 
-The line will be published to the `mystream` Kinesis stream within the
+The line will be published to the `my-stream` Kinesis stream within the
 default flush interval of 5 seconds.
 
 #### Quick start for the impatient among us
