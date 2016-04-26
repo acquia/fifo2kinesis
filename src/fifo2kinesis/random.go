@@ -17,6 +17,8 @@ const (
 
 var src = rand.NewSource(time.Now().UnixNano())
 
+// RandomString generates an random string of len(n) consisting of uppercase
+// and lowercase numbers.
 func RandomString(n int) string {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!

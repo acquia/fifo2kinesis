@@ -17,6 +17,7 @@ const (
 	LOG_DEBUG
 )
 
+// Logger is a simple leveled logger that writes logs to STDOUT.
 type Logger struct {
 	CritLogger   *log.Logger
 	ErrorLogger  *log.Logger

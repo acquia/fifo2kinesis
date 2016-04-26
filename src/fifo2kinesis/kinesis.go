@@ -6,12 +6,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/kinesis"
 )
 
+// KinesisBufferFlusher implements BufferFlusher and publishes the records
+// that are emitted by the BufferWriter to a Kinesis stream.
+//
+// Name is the Kinesis stream name.
+//
+// PartitionKey is the partition key set for all records. If PartitionKey is
+// an empty string, then a random string is generated for all data records
+// which is useful for distributing records across all open shards.
+//
+// kinesis is the initialized Kinesis client.
 type KinesisBufferFlusher struct {
 	Name         *string
 	PartitionKey string
 	kinesis      *kinesis.Kinesis
 }
 
+// NewKinesisBufferFlusher returns a KinesisBufferFlusher configured with
+// the stream name and partition key.
 func NewKinesisBufferFlusher(name, partitionKey string) *KinesisBufferFlusher {
 	return &KinesisBufferFlusher{
 		Name:         aws.String(name),
@@ -20,6 +32,8 @@ func NewKinesisBufferFlusher(name, partitionKey string) *KinesisBufferFlusher {
 	}
 }
 
+// FormatPartitionKey either returns the configured partition key or a
+// random string of 12 characters if the partition key is an empty string.
 func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 	if f.PartitionKey == "" {
 		return aws.String(RandomString(12))
@@ -28,6 +42,8 @@ func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 	}
 }
 
+// Flush publishes the data consumed from chunks to a Kenisis stream and
+// emits failed records to the failed channel.
 func (f *KinesisBufferFlusher) Flush(chunks <-chan []string, failed chan []string) {
 	for chunk := range chunks {
 		size := len(chunk)

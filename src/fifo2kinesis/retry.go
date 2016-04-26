@@ -9,16 +9,26 @@ import (
 	"time"
 )
 
+// FileFailedAttemptHandler implements FailedAttemptHandler and captures
+// failed attempts in files for retry at a later time.
+//
+// dir is the directory where files are written.
+//
+// fifo is a Fifo that models the named pipe being read. It is also used to
+// write failed attempts back to the named pipe.
 type FileFailedAttemptHandler struct {
 	dir  string
 	fifo *Fifo
 }
 
+// Filepath returns the full path to a new retry file.
 func (h *FileFailedAttemptHandler) Filepath() string {
 	date := time.Now().UTC().Format("20060102150405")
 	return fmt.Sprintf("%s/fifo2kinesis-%s-%s", h.dir, date, RandomString(8))
 }
 
+// SaveAttempt saves failed attempts to a file for retry at a later time via
+// the Retry method.
 func (h *FileFailedAttemptHandler) SaveAttempt(attempt []string) error {
 
 	// TODO Add duplicate file detection when creating retry files
@@ -34,6 +44,7 @@ func (h *FileFailedAttemptHandler) SaveAttempt(attempt []string) error {
 	return err
 }
 
+// Files returns all retry files in the
 func (h *FileFailedAttemptHandler) Files() []string {
 
 	files, err := ioutil.ReadDir(h.dir)
@@ -49,6 +60,8 @@ func (h *FileFailedAttemptHandler) Files() []string {
 	return filepaths
 }
 
+// Retry processes a group of files and writes the lines back to the FIFO so
+// that they go through the pipeline again.
 func (h *FileFailedAttemptHandler) Retry() {
 	// TODO Make the max number of retry attempts configurable
 	// https://github.com/acquia/fifo2kinesis/issues/20
