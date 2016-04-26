@@ -29,7 +29,7 @@ func TestFifoWriteAndScan(t *testing.T) {
 	}()
 
 	go func() {
-		if err := fifo.WriteString("test"); err != nil {
+		if err := fifo.Writeln("test"); err != nil {
 			t.Errorf("fifo write test failed: %s", err)
 		}
 	}()

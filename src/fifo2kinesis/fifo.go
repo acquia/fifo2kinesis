@@ -5,17 +5,21 @@ import (
 	"os"
 )
 
-// Fifo represents the named pipe.
+// Fifo represents the named pipe. It contains methods that write to and
+// continuously read from the named pipe.
+//
+// Name is the absolute path to the named pipe.
 type Fifo struct {
 	Name string
 }
 
-// Writes a line to the fifo.
+// Writeln writes a line to the FIFO, suffixed with a Unix new line.
 func (f *Fifo) Writeln(s string) error {
 	return f.WriteString(s + "\n")
 }
 
-// Write writes a string to the fifo.
+// WriteString writes a string as-is to the fifo. The Writeln method is
+// usually used in favor of this one.
 func (f *Fifo) WriteString(s string) error {
 	file, err := os.OpenFile(f.Name, os.O_WRONLY, os.ModeNamedPipe)
 	if err != nil {
@@ -29,9 +33,14 @@ func (f *Fifo) WriteString(s string) error {
 }
 
 // SendCommand writes a line to the fifo that the pipeline interprets as
-// a command to perform some action. This is necessary because reading from
-// the fifo blocks until something is written to it. This is how we chose to
-// get around this challenge.
+// some action to perform. This is necessary because reading from the FIFO
+// blocks until something is written to it.
+//
+// TODO This is how I chose to solve this problem. It is admittedly a hack.
+// There are some pretty smart people out there, I am hoping that someone
+// smarter than me can find a better way of doing things and eliminate the
+// need for this method. If you are reading this, consider yourself to be
+// officially presented with this challenge.
 func (f *Fifo) SendCommand(cmd string) (err error) {
 	err = f.Writeln("." + cmd)
 	logger.Debug("command sent: %s", cmd)

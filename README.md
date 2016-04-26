@@ -107,10 +107,11 @@ exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stream-name=my-stre
 
 ### Publishing Logs From Syslog NG
 
-**Disclaimer**: You should take a look at [fluentd](http://www.fluentd.org/).
+**NOTE**: You might also want to check out [fluentd](http://www.fluentd.org/)
+and the [Amazon Kinesis Agent](https://github.com/awslabs/amazon-kinesis-agent).
 You won't find an argument in this README as to why you should choose one
-over the other. I want to make sure you have all the options in front of you
-so that you can make the best decision for your specific use case.
+over the other, I just want to make sure you have all the options in front
+of you so that you can make the best decision for your specific use case.
 
 Syslog NG provides the capability to use a named pipe as a destination. Use
 fifo2kinesis to read log messages from the FIFO and publish them Kenisis.
