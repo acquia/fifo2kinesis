@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func init() {
+	logger = NewLogger(LOG_NONE)
+}
+
 func TempFifo(t *testing.T) *Fifo {
 
 	name := os.TempDir() + "/fifo2kinesis-" + RandomString(8) + ".pipe"

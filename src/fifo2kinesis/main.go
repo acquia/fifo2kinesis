@@ -21,8 +21,7 @@ var conf *viper.Viper
 // line options, environment variables, and the configuration file.
 var logger *Logger
 
-// init initializes the configuration and logging.
-func init() {
+func main() {
 
 	conf = viper.New()
 
@@ -64,8 +63,6 @@ func init() {
 	conf.BindPFlag("stream-name", pflag.Lookup("stream-name"))
 	conf.SetDefault("stream-name", "")
 
-	// TODO Options cannot be used with `gb test`, conflicts with application options
-	// https://github.com/acquia/fifo2kinesis/issues/25
 	pflag.Parse()
 
 	if conf.GetBool("debug") {
@@ -75,9 +72,6 @@ func init() {
 	}
 
 	logger.Debug("configuration parsed")
-}
-
-func main() {
 
 	h := conf.GetString("flush-handler")
 	if h != "kinesis" && h != "logger" {
