@@ -72,10 +72,7 @@ func (f *Fifo) Scan(out chan string) error {
 		// lines which would prevent fifo2kinesis from shutting down, but
 		// that seems to be the best of the worst options.
 		//
-		// If you are reading this, consider yourself challenged to find a
-		// better way of doing this. Most people are smarter than me, so I
-		// bet you can do it. I'm rooting for you!
-		//
+		// You. Yes, you. Please find a better solution.
 		for scanner.Scan() {
 			line := scanner.Text()
 			switch line {

@@ -78,6 +78,8 @@ func (h *FileFailedAttemptHandler) Retry() {
 	}
 }
 
+// RetryAttempt reads the lines from filename and writes them back to the
+// FIFO so that they go through the pipeline again.
 func (h *FileFailedAttemptHandler) RetryAttempt(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
