@@ -116,18 +116,19 @@ of you so that you can make the best decision for your specific use case.
 Syslog NG provides the capability to use a named pipe as a destination. Use
 fifo2kinesis to read log messages from the FIFO and publish them Kenisis.
 
-On Ubuntu 14.04, create a file named `/etc/syslog-ng/conf.d/01-kinesis.conf`
-with the following configration:
-
-```
-destination d_pipe { pipe("/var/syslog.pipe"); };
-log { source(s_src); destination(d_pipe); };
-```
-
 Make a FIFO:
 
 ```
 mkfifo /var/syslog.pipe
+```
+
+Modify syslog-ng configuration to send the logs to the named pipe. For example,
+on Ubuntu 14.04 create a file named `/etc/syslog-ng/conf.d/01-kinesis.conf` with
+the following configration:
+
+```
+destination d_pipe { pipe("/var/syslog.pipe"); };
+log { source(s_src); destination(d_pipe); };
 ```
 
 Start the app:
