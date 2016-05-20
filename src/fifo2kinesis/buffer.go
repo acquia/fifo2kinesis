@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"bytes"
+	"time"
+)
 
 // BufferWriter is implemented by subsystems that accept data read from the
 // FIFO and groups it into chunks that are processed by the BufferFlusher.
@@ -9,7 +12,7 @@ import "time"
 // grouped chunks of data via the chunks channel that is intended to be read
 // by the BufferFlusher's Flush method for processing.
 type BufferWriter interface {
-	Write(lines <-chan string, chunks chan []string)
+	Write(lines <-chan []byte, chunks chan [][]byte)
 }
 
 // BufferFlusher is the interface implemented by subsystems that process the
@@ -20,7 +23,7 @@ type BufferWriter interface {
 // by the buffer flusher. For example, the KinesisBufferFlusher batch
 // publishes the chunk of records to a Kinesis stream.
 type BufferFlusher interface {
-	Flush(chunks <-chan []string, failed chan []string)
+	Flush(chunks <-chan [][]byte, failed chan [][]byte)
 }
 
 // FailedAttemptHandler is the interface implemented by subsystems that
@@ -33,7 +36,7 @@ type BufferFlusher interface {
 // method. Usually this means writing the lines back to the FIFO so they can
 // go through the pipeline again.
 type FailedAttemptHandler interface {
-	SaveAttempt(attempt []string) error
+	SaveAttempt(attempt [][]byte) error
 	Retry()
 }
 
@@ -58,14 +61,15 @@ type MemoryBufferWriter struct {
 
 // reset is a helper method that returns an initialized chunk, key position,
 // and flush flag.
-func (w *MemoryBufferWriter) reset() ([]string, int, bool) {
-	return make([]string, w.QueueLimit), 0, false
+func (w *MemoryBufferWriter) reset() ([][]byte, int, bool) {
+	return make([][]byte, w.QueueLimit), 0, false
 }
 
 // Write stores the lines in memory that were read from the FIFO and emits
 // them as chunks for processing by the BufferFlusher.
-func (w *MemoryBufferWriter) Write(lines <-chan string, chunks chan []string) {
+func (w *MemoryBufferWriter) Write(lines <-chan []byte, chunks chan [][]byte) {
 	forceFlush := make(chan bool, 1)
+	flush_cmd := []byte(".flush")
 
 	if w.FlushInterval > 0 {
 		go func() {
@@ -95,11 +99,11 @@ func (w *MemoryBufferWriter) Write(lines <-chan string, chunks chan []string) {
 		// The flush command was sent to unblock the fifo read in case no
 		// lines were being written to the fifo. The forceFlush channel is
 		// what matters, so we ignore the flush command and move on.
-		if line != ".flush" {
+		if bytes.Equal(line, flush_cmd) {
+			logger.Debug("command received: flush")
+		} else {
 			chunk[key] = line
 			key++
-		} else {
-			logger.Debug("command received: flush")
 		}
 
 		if key >= w.QueueLimit {
@@ -130,10 +134,10 @@ type LoggerBufferFlusher struct{}
 //
 // TODO Would it be useful to be able to send a certain percentage of lines
 // to the failed channel for testing the retry capabilities?
-func (f *LoggerBufferFlusher) Flush(chunks <-chan []string, failed chan []string) {
+func (f *LoggerBufferFlusher) Flush(chunks <-chan [][]byte, failed chan [][]byte) {
 	for chunk := range chunks {
 		for _, line := range chunk {
-			logger.Info(line)
+			logger.Info(string(line))
 		}
 	}
 }
@@ -143,7 +147,7 @@ func (f *LoggerBufferFlusher) Flush(chunks <-chan []string, failed chan []string
 type NullFailedAttemptHandler struct{}
 
 // SaveAttempt does nothing with the data passed to it.
-func (h NullFailedAttemptHandler) SaveAttempt(attempt []string) error {
+func (h NullFailedAttemptHandler) SaveAttempt(attempt [][]byte) error {
 	return nil
 }
 

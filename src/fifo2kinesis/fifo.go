@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 )
 
@@ -14,20 +15,21 @@ type Fifo struct {
 }
 
 // Writeln writes a line to the FIFO, suffixed with a Unix new line.
-func (f *Fifo) Writeln(s string) error {
-	return f.WriteString(s + "\n")
+func (f *Fifo) Writeln(b []byte) error {
+	b = append(b, byte(10))
+	return f.Write(b)
 }
 
 // WriteString writes a string as-is to the fifo. The Writeln method is
 // usually used in favor of this one.
-func (f *Fifo) WriteString(s string) error {
+func (f *Fifo) Write(b []byte) error {
 	file, err := os.OpenFile(f.Name, os.O_WRONLY, os.ModeNamedPipe)
 	if err != nil {
 		return err
 	}
 
 	defer file.Close()
-	_, err = file.WriteString(s)
+	_, err = file.Write(b)
 
 	return err
 }
@@ -42,7 +44,7 @@ func (f *Fifo) WriteString(s string) error {
 // need for this method. If you are reading this, consider yourself to be
 // officially presented with this challenge.
 func (f *Fifo) SendCommand(cmd string) (err error) {
-	err = f.Writeln("." + cmd)
+	err = f.Writeln([]byte("." + cmd))
 	logger.Debug("command sent: %s", cmd)
 	return
 }
@@ -50,7 +52,7 @@ func (f *Fifo) SendCommand(cmd string) (err error) {
 // Scan reads lines from the fifo and sends them to the out channel. The
 // only ways to stop the scan is to write the ".stop" string to the fifo
 // or if there is an error reading data from the fifo.
-func (f *Fifo) Scan(out chan string) error {
+func (f *Fifo) Scan(out chan []byte) error {
 	stop := false
 
 	// This statement blocks until a line is written to the fifo. This
@@ -69,17 +71,17 @@ func (f *Fifo) Scan(out chan string) error {
 	// that seems to be the best of the worst options.
 	//
 	// You. Yes, you. Please find a better solution.
+	stop_cmd := []byte(".stop")
 	for {
 		scanner := bufio.NewScanner(file)
 		scanner.Split(bufio.ScanLines)
 
 		for scanner.Scan() {
-			line := scanner.Text()
-			switch line {
-			case ".stop":
+			line := scanner.Bytes()
+			if bytes.Equal(line, stop_cmd) {
 				logger.Debug("command received: stop")
 				stop = true
-			default:
+			} else {
 				out <- line
 			}
 		}

@@ -2,10 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -29,7 +29,7 @@ func (h *FileFailedAttemptHandler) Filepath() string {
 
 // SaveAttempt saves failed attempts to a file for retry at a later time via
 // the Retry method.
-func (h *FileFailedAttemptHandler) SaveAttempt(attempt []string) error {
+func (h *FileFailedAttemptHandler) SaveAttempt(attempt [][]byte) error {
 
 	// TODO Add duplicate file detection when creating retry files
 	// https://github.com/acquia/fifo2kinesis/issues/21
@@ -37,9 +37,10 @@ func (h *FileFailedAttemptHandler) SaveAttempt(attempt []string) error {
 	if err != nil {
 		return err
 	}
+	newline := []byte{10}
 
 	defer file.Close()
-	_, err = file.WriteString(strings.Join(attempt, "\n"))
+	_, err = file.Write(bytes.Join(attempt, newline))
 
 	return err
 }
@@ -95,7 +96,7 @@ func (h *FileFailedAttemptHandler) RetryAttempt(filename string) error {
 
 	// TODO capture lines that failed and write a new file?
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := scanner.Bytes()
 		h.fifo.Writeln(line)
 	}
 
