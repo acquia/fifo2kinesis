@@ -82,7 +82,9 @@ func (f *Fifo) Scan(out chan []byte) error {
 				logger.Debug("command received: stop")
 				stop = true
 			} else {
-				out <- line
+				bytes := make([]byte, len(line))
+				copy(bytes, line)
+				out <- bytes
 			}
 		}
 
