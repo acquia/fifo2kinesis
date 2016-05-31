@@ -54,28 +54,28 @@ func (f *Fifo) SendCommand(cmd string) (err error) {
 // or if there is an error reading data from the fifo.
 func (f *Fifo) Scan(out chan []byte) error {
 	stop := false
-
-	// This statement blocks until a line is written to the fifo. This
-	// is why we have the write ".stop" to the fifo during shutdown.
-	file, err := os.OpenFile(f.Name, os.O_RDONLY, os.ModeNamedPipe)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	// If we break the loop we lose data. Not sure how to handle that.
-	// Might have to live with the loop running through until the end.
-	// Of course, the app writing to the fifo could continue writing
-	// lines which would prevent fifo2kinesis from shutting down, but
-	// that seems to be the best of the worst options.
-	//
-	// You. Yes, you. Please find a better solution.
 	stop_cmd := []byte(".stop")
 	for {
+
+		// This statement blocks until a line is written to the fifo. This
+		// is why we have the write ".stop" to the fifo during shutdown.
+		file, err := os.OpenFile(f.Name, os.O_RDONLY, os.ModeNamedPipe)
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+
 		scanner := bufio.NewScanner(file)
 		scanner.Split(bufio.ScanLines)
 
+		// If we break the loop we lose data. Not sure how to handle that.
+		// Might have to live with the loop running through until the end.
+		// Of course, the app writing to the fifo could continue writing
+		// lines which would prevent fifo2kinesis from shutting down, but
+		// that seems to be the best of the worst options.
+		//
+		// You. Yes, you. Please find a better solution.
 		for scanner.Scan() {
 			line := scanner.Bytes()
 			if bytes.Equal(line, stop_cmd) {
