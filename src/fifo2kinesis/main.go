@@ -26,6 +26,7 @@ func main() {
 	conf = viper.New()
 
 	conf.SetEnvPrefix("FIFO2KINESIS")
+
 	conf.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	conf.AutomaticEnv()
 
@@ -181,8 +182,8 @@ func RunPipeline(fifo *Fifo, buffer *Buffer, shutdown <-chan bool) {
 
 // ReadLines reads lines from the fifo until a notification is sent to the
 // stop channel. This is the source of the pipeline.
-func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
-	lines := make(chan string)
+func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan []byte {
+	lines := make(chan []byte)
 
 	wg.Add(1)
 	go func() {
@@ -203,11 +204,11 @@ func ReadLines(fifo *Fifo, wg *sync.WaitGroup) <-chan string {
 
 // WriteToBuffer fills the buffer with lines and turns them into groups of
 // records that are send to the flush handler, e.g. Kinesis.
-func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
+func WriteToBuffer(lines <-chan []byte, buffer *Buffer) <-chan [][]byte {
 
 	// TODO Implement a buffer size limit
 	// https://github.com/acquia/fifo2kinesis/issues/23
-	chunks := make(chan []string, 100)
+	chunks := make(chan [][]byte, 100)
 
 	go func() {
 		defer close(chunks)
@@ -219,8 +220,8 @@ func WriteToBuffer(lines <-chan string, buffer *Buffer) <-chan []string {
 
 // FlushBuffer batch-processes the lines that were read from the FIFO, e.g.
 // issues a PutRecords command to the Kinesis stream.
-func FlushBuffer(chunks <-chan []string, buffer *Buffer, wg *sync.WaitGroup) <-chan []string {
-	failed := make(chan []string)
+func FlushBuffer(chunks <-chan [][]byte, buffer *Buffer, wg *sync.WaitGroup) <-chan [][]byte {
+	failed := make(chan [][]byte)
 
 	wg.Add(1)
 	go func() {
@@ -234,7 +235,7 @@ func FlushBuffer(chunks <-chan []string, buffer *Buffer, wg *sync.WaitGroup) <-c
 
 // HandleFailures saves failed chunks so that processing can be retried.
 // This function is the pipeline's sink.
-func HandleFailures(failed <-chan []string, buffer *Buffer, wg *sync.WaitGroup) {
+func HandleFailures(failed <-chan [][]byte, buffer *Buffer, wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

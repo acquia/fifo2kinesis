@@ -44,7 +44,7 @@ func (f *KinesisBufferFlusher) FormatPartitionKey() *string {
 
 // Flush publishes the data consumed from chunks to a Kenisis stream and
 // emits failed records to the failed channel.
-func (f *KinesisBufferFlusher) Flush(chunks <-chan []string, failed chan []string) {
+func (f *KinesisBufferFlusher) Flush(chunks <-chan [][]byte, failed chan [][]byte) {
 	for chunk := range chunks {
 		size := len(chunk)
 
@@ -56,7 +56,7 @@ func (f *KinesisBufferFlusher) Flush(chunks <-chan []string, failed chan []strin
 		for key, line := range chunk {
 			records[key] = &kinesis.PutRecordsRequestEntry{
 				PartitionKey: f.FormatPartitionKey(),
-				Data:         []byte(line),
+				Data:         line,
 			}
 		}
 
@@ -76,7 +76,7 @@ func (f *KinesisBufferFlusher) Flush(chunks <-chan []string, failed chan []strin
 		// Check if some of the records failed to be published.
 		if *output.FailedRecordCount != 0 {
 			logger.Error("error publishing %v record(s) to kinesis: %s", *output.FailedRecordCount, err)
-			subchunk := make([]string, *output.FailedRecordCount)
+			subchunk := make([][]byte, *output.FailedRecordCount)
 
 			for key, record := range output.Records {
 				if record.ErrorCode != nil {

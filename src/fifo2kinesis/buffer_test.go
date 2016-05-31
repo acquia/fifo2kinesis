@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"testing"
 	"time"
@@ -18,16 +19,18 @@ func TestBufferFlushLimitExceeded(t *testing.T) {
 		QueueLimit:    2,
 	}
 
-	lines := make(chan string)
-	chunks := make(chan []string)
+	lines := make(chan []byte)
+	chunks := make(chan [][]byte)
+	zero := []byte("zero")
+	one := []byte("one")
 
 	go func() {
 		bw.Write(lines, chunks)
 	}()
 
 	go func() {
-		lines <- "zero"
-		lines <- "one"
+		lines <- zero
+		lines <- one
 	}()
 
 	timeout := make(chan bool, 1)
@@ -40,7 +43,7 @@ func TestBufferFlushLimitExceeded(t *testing.T) {
 	case <-timeout:
 		t.Error("timeout waiting for buffer flush limit exceeded test to complete")
 	case got := <-chunks:
-		if got[0] != "zero" || got[1] != "one" {
+		if !bytes.Equal(got[0], zero) || !bytes.Equal(got[1], one) {
 			t.Errorf("buffer flush limit exceeded test failed: got %q", got)
 		}
 	}
@@ -60,15 +63,16 @@ func TestBufferFlushWithinLimit(t *testing.T) {
 		QueueLimit:    2,
 	}
 
-	lines := make(chan string)
-	chunks := make(chan []string)
+	lines := make(chan []byte)
+	chunks := make(chan [][]byte)
+	zero := []byte("zero")
 
 	go func() {
 		bw.Write(lines, chunks)
 	}()
 
 	go func() {
-		lines <- "zero"
+		lines <- zero
 	}()
 
 	timeout := make(chan bool, 1)
@@ -97,8 +101,9 @@ func TestBufferFlushInterval(t *testing.T) {
 		QueueLimit:    2,
 	}
 
-	lines := make(chan string)
-	chunks := make(chan []string)
+	lines := make(chan []byte)
+	chunks := make(chan [][]byte)
+	zero := []byte("zero")
 
 	go func() {
 		fifo.Scan(lines)
@@ -109,7 +114,7 @@ func TestBufferFlushInterval(t *testing.T) {
 	}()
 
 	go func() {
-		fifo.Writeln("zero")
+		fifo.Writeln(zero)
 	}()
 
 	timeout := make(chan bool, 1)
@@ -122,7 +127,7 @@ func TestBufferFlushInterval(t *testing.T) {
 	case <-timeout:
 		t.Error("timeout waiting for buffer flush interval test to complete")
 	case got := <-chunks:
-		if got[0] != "zero" {
+		if !bytes.Equal(got[0], zero) {
 			t.Errorf("buffer flush interval test failed: expected timeout, got %q", got)
 		}
 	}
@@ -139,8 +144,9 @@ func TestBufferChunkSize(t *testing.T) {
 		QueueLimit:    2,
 	}
 
-	lines := make(chan string)
-	chunks := make(chan []string)
+	lines := make(chan []byte)
+	chunks := make(chan [][]byte)
+	zero := []byte("zero")
 
 	go func() {
 		fifo.Scan(lines)
@@ -151,7 +157,7 @@ func TestBufferChunkSize(t *testing.T) {
 	}()
 
 	go func() {
-		fifo.Writeln("zero")
+		fifo.Writeln(zero)
 	}()
 
 	timeout := make(chan bool, 1)

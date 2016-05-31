@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"syscall"
 	"testing"
@@ -26,14 +27,15 @@ func TestFifoWriteAndScan(t *testing.T) {
 	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
-	out := make(chan string, 1)
+	out := make(chan []byte, 1)
+	test := []byte("test")
 
 	go func() {
 		fifo.Scan(out)
 	}()
 
 	go func() {
-		if err := fifo.Writeln("test"); err != nil {
+		if err := fifo.Writeln(test); err != nil {
 			t.Errorf("fifo write test failed: %s", err)
 		}
 	}()
@@ -48,7 +50,7 @@ func TestFifoWriteAndScan(t *testing.T) {
 	case <-timeout:
 		t.Error("timeout waiting for line to be read from fifo")
 	case line := <-out:
-		if line != "test" {
+		if !bytes.Equal(line, test) {
 			t.Errorf("fifo scan test failed: got %q", line)
 		}
 	}
@@ -58,7 +60,7 @@ func TestStopCommand(t *testing.T) {
 	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
-	out := make(chan string, 1)
+	out := make(chan []byte, 1)
 	stopped := make(chan bool, 1)
 
 	go func() {
@@ -89,7 +91,10 @@ func TestScanDrain(t *testing.T) {
 	fifo := TempFifo(t)
 	defer os.Remove(fifo.Name)
 
-	out := make(chan string, 1)
+	out := make(chan []byte, 1)
+	zero := []byte("zero")
+	one := []byte("one")
+	two := []byte("two")
 
 	go func() {
 		fifo.Scan(out)
@@ -99,7 +104,7 @@ func TestScanDrain(t *testing.T) {
 	go func() {
 		// Write four lines inclusing a ".stop" comman in the middle. If all
 		// goes well we should read three lines from the out channel.
-		if err := fifo.WriteString("zero\n.stop\none\ntwo"); err != nil {
+		if err := fifo.Write([]byte("zero\n.stop\none\ntwo")); err != nil {
 			t.Errorf("error sending stop command: %s", err)
 		}
 	}()
@@ -108,7 +113,7 @@ func TestScanDrain(t *testing.T) {
 
 	go func() {
 		key := 0
-		lines := make([]string, 3)
+		lines := make([][]byte, 3)
 		for line := range out {
 			lines[key] = line
 			key++
@@ -118,7 +123,7 @@ func TestScanDrain(t *testing.T) {
 			t.Errorf("fifo scan drain test failed: got %q lines", key)
 		}
 
-		if lines[0] != "zero" || lines[1] != "one" || lines[2] != "two" {
+		if !bytes.Equal(lines[0], zero) || !bytes.Equal(lines[1], one) || !bytes.Equal(lines[2], two) {
 			t.Errorf("fifo scan drain test failed: got %q", lines)
 		}
 
