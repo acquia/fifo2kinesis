@@ -103,6 +103,7 @@ respawn
 respawn limit 3 30
 post-stop exec sleep 5
 
+AWS_REGION=us-east-1
 exec /path/to/fifo2kinesis --fifo-name=/path/to/named.pipe --stream-name=my-stream
 ```
 
