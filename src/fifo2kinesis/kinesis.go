@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 )
@@ -25,10 +26,23 @@ type KinesisBufferFlusher struct {
 // NewKinesisBufferFlusher returns a KinesisBufferFlusher configured with
 // the stream name and partition key.
 func NewKinesisBufferFlusher(name, partitionKey string) *KinesisBufferFlusher {
+	sess := session.New()
+
+	// Are we assuming a role?
+	roleARN := conf.GetString("role-arn")
+	if roleARN != "" {
+		sess.Config.Credentials = stscreds.NewCredentials(sess, roleARN, func(o *stscreds.AssumeRoleProvider) {
+			rsn := conf.GetString("role-session-name")
+			if rsn != "" {
+				o.RoleSessionName = rsn
+			}
+		})
+	}
+
 	return &KinesisBufferFlusher{
 		Name:         aws.String(name),
 		PartitionKey: partitionKey,
-		kinesis:      kinesis.New(session.New()),
+		kinesis:      kinesis.New(sess),
 	}
 }
 
