@@ -39,6 +39,11 @@ func NewKinesisBufferFlusher(name, partitionKey string) *KinesisBufferFlusher {
 		})
 	}
 
+	region := conf.GetString("region")
+	if region != "" {
+		sess.Config.Region = aws.String(region)
+	}
+
 	return &KinesisBufferFlusher{
 		Name:         aws.String(name),
 		PartitionKey: partitionKey,

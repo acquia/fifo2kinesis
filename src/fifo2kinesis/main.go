@@ -60,9 +60,13 @@ func main() {
 	conf.BindPFlag("partition-key", pflag.Lookup("partition-key"))
 	conf.SetDefault("partition-key", "")
 
+	pflag.StringP("region", "R", "", "The AWS region that the Kinesis stream is provisioned in")
+	conf.BindPFlag("region", pflag.Lookup("region"))
+	conf.SetDefault("region", "")
+
 	pflag.StringP("role-arn", "r", "", "The ARN of the AWS role being assumed.")
 	conf.BindPFlag("role-arn", pflag.Lookup("role-arn"))
-	conf.SetDefault("partition-key", "")
+	conf.SetDefault("role-arn", "")
 
 	pflag.StringP("role-session-name", "S", "", "The session name used when assuming a role.")
 	conf.BindPFlag("role-session-name", pflag.Lookup("role-session-name"))
