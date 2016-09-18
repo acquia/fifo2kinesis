@@ -11,7 +11,9 @@ fi
 GOOS=linux GOARCH=amd64 gb build
 GOOS=darwin GOARCH=amd64 gb build
 
-mv fifo2kinesis-linux-amd64 fifo2kinesis-$version-linux-amd64
-mv fifo2kinesis-darwin-amd64 fifo2kinesis-$version-darwin-amd64
-
+(
+  cd bin
+  mv fifo2kinesis-linux-amd64 fifo2kinesis-$version-linux-amd64
+  mv fifo2kinesis-darwin-amd64 fifo2kinesis-$version-darwin-amd64
+)
 
