@@ -1,0 +1,14 @@
+package: .
+import:
+- package: github.com/aws/aws-sdk-go
+  version: ^1.4.10
+  subpackages:
+  - aws
+  - aws/credentials/stscreds
+  - aws/session
+  - service/kinesis
+- package: github.com/spf13/pflag
+- package: github.com/spf13/viper
+- package: golang.org/x/sys
+  subpackages:
+  - unix

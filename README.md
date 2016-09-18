@@ -26,12 +26,12 @@ way that can tolerate network and AWS outages.
 
 ## Installation
 
-This project uses the [GB build tool](https://getgb.io/). Assuming that GB
-is installed, run the following command in the project's root directory to
-build the `fifo2kinesis` binary:
+Either download the [latest binary](https://github.com/acquia/fifo2kinesis/releases/latest)
+for your platform, or run the following command in the project's root to build
+the aws-proxy binary from source:
 
 ```shell
-gb build
+GOPATH=$PWD go build -o ./bin/fifo2kinesis fifo2kinesis
 ```
 
 ## Usage
@@ -148,3 +148,17 @@ service syslog-ng restart
 ```
 
 The log stream will now be published to Kinesis.
+
+
+## Development
+
+AWS Proxy uses [Glide](https://glide.sh/) to manage dependencies.
+
+#### Tests
+
+Run the following commands to run tests and generate a coverage report:
+
+```shell
+GOPATH=$PWD go test -coverprofile=build/coverage.out fifo2kinesis
+GOPATH=$PWD go tool cover -html=build/coverage.out
+```

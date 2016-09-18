@@ -1,3 +1,6 @@
 /.DS_Store
-/bin
-/pkg
+/bin/*
+!/bin/.placeholder
+/build/*
+!/build/.placeholder
+fifo2kinesis
