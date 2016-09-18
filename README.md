@@ -82,6 +82,8 @@ available:
 * `--failed-attempts-dir`, `FIFO2KINESIS_FAILED_ATTEMPTS_DIR`: The directory that logs failed attempts for retry.
 * `--flush-interval`, `FIFO2KINESIS_FLUSH_INTERVAL`: The number of seconds before the buffer is flushed.
 * `--flush-handler`, `FIFO2KINESIS_FLUSH_HANDLER`: Defaults to "kinesis", use "logger" for debugging.
+* `--role-arn`, `FIFO2KINESIS_ROLE_ARN`: The ARN of the AWS role being assumed.
+* `--role-session-name`, `FIFO2KINESIS_ROLE_SESSION_NAME`: The session name used when assuming a role.
 * `--debug`, `FIFO2KINESIS_DEBUG`: Show debug level log messages.
 
 The application also requires credentials to publish to the specified

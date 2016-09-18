@@ -64,7 +64,7 @@ func main() {
 	conf.BindPFlag("role-arn", pflag.Lookup("role-arn"))
 	conf.SetDefault("partition-key", "")
 
-	pflag.StringP("role-session-name", "S", "", "The session named used when assuming a role.")
+	pflag.StringP("role-session-name", "S", "", "The session name used when assuming a role.")
 	conf.BindPFlag("role-session-name", pflag.Lookup("role-session-name"))
 	conf.SetDefault("role-session-name", "")
 
