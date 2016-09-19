@@ -7,11 +7,5 @@ go:
  - 1.7
  - tip
 
-before_install:
-  - "go get github.com/constabulary/gb/..."
-
-install:
-  - "gb build"
-
 script:
-  - "gb test"
+  - "go test fifo2kinesis"
