@@ -6,6 +6,3 @@ go:
  - 1.6
  - 1.7
  - tip
-
-script:
-  - "go test fifo2kinesis"
