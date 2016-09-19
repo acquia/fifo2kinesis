@@ -6,3 +6,7 @@ go:
  - 1.6
  - 1.7
  - tip
+
+install: true
+
+script: GOPATH=$TRAVIS_BUILD_DIR go test -v fifo2kinesis
